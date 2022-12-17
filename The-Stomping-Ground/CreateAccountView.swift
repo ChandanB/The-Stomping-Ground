@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 import PhotosUI
 
 struct CreateAccountView: View {
@@ -16,6 +17,8 @@ struct CreateAccountView: View {
     @State var accountSuccessfullyCreated = true
     @State var creationStatusMessage = ""
     @StateObject var userModel = UserModel()
+    
+    let aboutMeLimit = 120
 
     var body: some View {
 
@@ -41,9 +44,24 @@ struct CreateAccountView: View {
                     }
                     .padding(12)
                     .background(.white)
+                    .cornerRadius(4)
                     
-                    EditableCircularProfileImage(viewModel: userModel)
-        
+                    HStack {
+                        EditableCircularProfileImage(viewModel: userModel)
+                            .padding(.bottom, 16)
+                        VStack {
+                            TextField("About Me", text: $userModel.aboutMe, axis: .vertical)
+                                .padding(32)
+                                .lineLimit(3, reservesSpace: true)
+                                .background(.white)
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .cornerRadius(4)
+                                .onReceive(Just($userModel.aboutMe)) { _ in limitText(aboutMeLimit) }
+                            Text("\($userModel.aboutMe.wrappedValue.count)" + " / " + "\(aboutMeLimit)")
+                        }
+                        
+                    }
+                            
                     Button {
                         handleAuthentication()
                     } label: {
@@ -92,6 +110,8 @@ struct CreateAccountView: View {
             }
             self.accountSuccessfullyCreated = true
             self.creationStatusMessage = "Successfully created user!"
+            
+            persistImageToStorage()
         }
     }
     
@@ -103,18 +123,25 @@ struct CreateAccountView: View {
         let ref = FirebaseManager.shared.storage.reference(withPath: uid)
         ref.putData(imageData) { metadata, err in
             if let err = err {
+                self.accountSuccessfullyCreated = false
                 self.creationStatusMessage = "Failed to push image to storage: \(err)"
                 return
             }
             
             ref.downloadURL { url, err in
                 if let err = err {
+                    self.accountSuccessfullyCreated = false
                     self.creationStatusMessage = "Failed to retrieve dwn url: \(err)"
                     return
                 }
             }
         }
-       
+    }
+    
+    private func limitText(_ upper: Int) {
+        if $userModel.aboutMe.wrappedValue.count > upper {
+            $userModel.aboutMe.wrappedValue = String($userModel.aboutMe.wrappedValue.prefix(upper))
+        }
     }
 }
 

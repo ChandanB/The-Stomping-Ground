@@ -14,7 +14,7 @@ struct SelectProfileImageView: View {
     var body: some View {
         switch imageState {
         case .success(let image):
-            image.resizable()
+            Image(uiImage: image).resizable()
         case .loading:
             ProgressView()
         case .empty:
@@ -36,7 +36,7 @@ struct CircularProfileImage: View {
         SelectProfileImageView(imageState: imageState)
             .scaledToFill()
             .clipShape(Circle())
-            .frame(width: 150, height: 150)
+            .frame(width: 100, height: 100)
             .background {
                 Circle().fill(
                     LinearGradient(
@@ -54,7 +54,7 @@ struct EditableCircularProfileImage: View {
     
     var body: some View {
         CircularProfileImage(imageState: viewModel.imageState)
-            .overlay(RoundedRectangle(cornerRadius: 72).stroke(Color.black, lineWidth: 3))
+            .overlay(RoundedRectangle(cornerRadius: 72).stroke(Color.black, lineWidth: 2))
             .overlay(alignment: .bottomTrailing) {
                 PhotosPicker(selection: $viewModel.imageSelection,
                              matching: .images,
