@@ -94,7 +94,8 @@ struct CreateAccountView: View {
                 .frame(width: geometry.size.width)
                 .frame(minHeight: geometry.size.height)
             }
-            .navigationTitle("SG Social")
+            .navigationTitle("")
+            .navigationBarHidden(true)
             .background(Color(.init(white: 0, alpha: 0.09)))
         }
     }
@@ -121,21 +122,43 @@ struct CreateAccountView: View {
         guard let imageData = userModel.profileImage.jpegData(compressionQuality: 0.5)
         else { return }
         let ref = FirebaseManager.shared.storage.reference(withPath: uid)
+        
         ref.putData(imageData) { metadata, err in
             if let err = err {
                 self.accountSuccessfullyCreated = false
                 self.creationStatusMessage = "Failed to push image to storage: \(err)"
                 return
             }
-            
             ref.downloadURL { url, err in
                 if let err = err {
                     self.accountSuccessfullyCreated = false
                     self.creationStatusMessage = "Failed to retrieve dwn url: \(err)"
                     return
                 }
+                guard let url = url else { return }
+                storeUserInformation(imageProfileUrl: url)
             }
         }
+    }
+    
+    private func storeUserInformation(imageProfileUrl: URL) {
+        guard let uid = FirebaseManager.shared.auth.currentUser?.uid
+        else { return }
+        let userData = [
+            "uid": uid,
+            "name": $userModel.name.wrappedValue,
+            "username": $userModel.username.wrappedValue,
+            "email": $userModel.email.wrappedValue,
+            "about_me": $userModel.aboutMe.wrappedValue,
+            "profileImageUrl": imageProfileUrl.absoluteString] as [String : Any]
+        FirebaseManager.shared.firestore.collection("users")
+            .document(uid).setData(userData) { err in
+                if let err = err {
+                    self.accountSuccessfullyCreated = false
+                    self.creationStatusMessage = "\(err)"
+                    return
+                }
+            }
     }
     
     private func limitText(_ upper: Int) {

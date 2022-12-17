@@ -49,7 +49,7 @@ struct LoginView: View {
                     NavigationLink(destination: CreateAccountView()
                         .navigationBarBackButtonHidden()
                         .navigationViewStyle(StackNavigationViewStyle()))
-                    { Text("Already have an account? Sign In") }
+                    { Text("Don't have an account yet? Sign Up") }
                         .isDetailLink(false)
                     
                     if loginWasSuccessful {
@@ -67,7 +67,8 @@ struct LoginView: View {
                 
             }
             .environment(\.rootPresentationMode, self.$isInLoginMode)
-            .navigationTitle("SG Social")
+            .navigationTitle("")
+            .navigationBarHidden(true)
             .background(Color(.init(white: 0, alpha: 0.09)))
         }
     }
