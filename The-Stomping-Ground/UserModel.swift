@@ -9,6 +9,19 @@ import SwiftUI
 import PhotosUI
 import CoreTransferable
 
+struct ChatUser: Identifiable {
+    
+    var id: String { uid }
+    
+    var uid, name, profileImageUrl: String
+    
+    init(data: [String: Any]) {
+        self.uid = data["uid"] as? String ?? ""
+        self.name = data["name"] as? String ?? ""
+        self.profileImageUrl = data["profileImageUrl"] as? String ?? ""
+    }
+}
+
 @MainActor
 class UserModel: ObservableObject {
     
