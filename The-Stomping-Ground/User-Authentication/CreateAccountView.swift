@@ -16,15 +16,14 @@ struct CreateAccountView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var password = ""
-    @State private var accountSuccessfullyCreated = true
+    @State private var accountSuccessfullyCreated = false
     @State private var creationStatusMessage = ""
     @StateObject private var userModel = UserModel()
     
     let aboutMeLimit = 120
 
     var body: some View {
-
-        NavigationView {
+        NavigationStack {
             createAccountForm
             .overlay(alreadyHaveAccountText, alignment: .bottom)
             .navigationTitle("")
@@ -60,14 +59,14 @@ struct CreateAccountView: View {
                     EditableCircularProfileImage(viewModel: userModel)
                         .padding(.bottom, 16)
                     VStack {
-                        TextField("About Me", text: $userModel.aboutMe, axis: .vertical)
+                        TextField("About Me", text: $userModel.about, axis: .vertical)
                             .padding(32)
                             .lineLimit(3, reservesSpace: true)
                             .background(.white)
                             .textFieldStyle(PlainTextFieldStyle())
                             .cornerRadius(4)
-                            .onReceive(Just($userModel.aboutMe)) { _ in limitText(aboutMeLimit) }
-                        Text("\($userModel.aboutMe.wrappedValue.count)" + " / " + "\(aboutMeLimit)")
+                            .onReceive(Just($userModel.about)) { _ in limitText(aboutMeLimit) }
+                        Text("\($userModel.about.wrappedValue.count)" + " / " + "\(aboutMeLimit)")
                     }
                     
                 }
@@ -84,8 +83,6 @@ struct CreateAccountView: View {
                         Spacer()
                     }.background(.blue)
                 }
-                
-               
                 
                 if accountSuccessfullyCreated {
                     Text(self.creationStatusMessage)
@@ -123,8 +120,13 @@ struct CreateAccountView: View {
             self.creationStatusMessage = "Successfully created user!"
             
             guard let uid = FirebaseManager.shared.auth.currentUser?.uid else { return }
+            
+            if userModel.profileImage.jpegData(compressionQuality: 0.5) == nil {
+                guard let image = UIImage(systemName: "person") else { return }
+                userModel.profileImage = image
+            }
+            
             persistImageToStorage(uid: uid)
-            self.didCompleteRegisterProcess()
         }
     }
     
@@ -153,12 +155,12 @@ struct CreateAccountView: View {
     
     private func storeUserInformation(imageProfileUrl: URL, uid: String) {
         let userData = [
-            "uid": uid,
-            "name": $userModel.name.wrappedValue,
-            "username": $userModel.username.wrappedValue,
-            "email": $userModel.email.wrappedValue,
-            "about_me": $userModel.aboutMe.wrappedValue,
-            "profileImageUrl": imageProfileUrl.absoluteString] as [String : Any]
+            FirebaseConstants.uid: uid,
+            FirebaseConstants.name: $userModel.name.wrappedValue,
+            FirebaseConstants.username: $userModel.username.wrappedValue,
+            FirebaseConstants.email: $userModel.email.wrappedValue,
+            FirebaseConstants.about: $userModel.about.wrappedValue,
+            FirebaseConstants.profileImageUrl: imageProfileUrl.absoluteString] as [String : Any]
         FirebaseManager.shared.firestore.collection("users")
             .document(uid).setData(userData) { err in
                 if let err = err {
@@ -166,12 +168,13 @@ struct CreateAccountView: View {
                     self.creationStatusMessage = "\(err)"
                     return
                 }
+                self.didCompleteRegisterProcess()
             }
     }
     
     private func limitText(_ upper: Int) {
-        if $userModel.aboutMe.wrappedValue.count > upper {
-            $userModel.aboutMe.wrappedValue = String($userModel.aboutMe.wrappedValue.prefix(upper))
+        if $userModel.about.wrappedValue.count > upper {
+            $userModel.about.wrappedValue = String($userModel.about.wrappedValue.prefix(upper))
         }
     }
 }

@@ -39,7 +39,7 @@ struct EditProfileForm: View {
             }
             Section {
                 TextField("About Me",
-                          text: $viewModel.aboutMe,
+                          text: $viewModel.about,
                           prompt: Text("About Me"))
             }
         }

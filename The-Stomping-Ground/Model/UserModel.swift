@@ -8,18 +8,16 @@
 import SwiftUI
 import PhotosUI
 import CoreTransferable
+import FirebaseFirestoreSwift
 
-struct ChatUser: Identifiable {
-    
-    var id: String { uid }
-    
-    var uid, name, profileImageUrl: String
-    
-    init(data: [String: Any]) {
-        self.uid = data["uid"] as? String ?? ""
-        self.name = data["name"] as? String ?? ""
-        self.profileImageUrl = data["profileImageUrl"] as? String ?? ""
-    }
+struct User: Codable, Identifiable {
+    @DocumentID var id: String?
+    let uid, name, username, email, profileImageUrl: String
+    var isFollowing: Bool?
+    var bio: String?
+    var following, followers: [User]?
+    var posts: [Post]?
+    var isEditable: Bool?
 }
 
 @MainActor
@@ -30,7 +28,7 @@ class UserModel: ObservableObject {
     @Published var name: String = ""
     @Published var username: String = ""
     @Published var email: String = ""
-    @Published var aboutMe: String = ""
+    @Published var about: String = ""
     @Published var profileImage: UIImage = UIImage()
 
     

@@ -9,7 +9,7 @@ import SwiftUI
 
 class CreateNewMessageViewModel: ObservableObject {
     
-    @Published var users = [ChatUser]()
+    @Published var users = [User]()
     @Published var errorMessage = ""
     
     init() {
@@ -18,6 +18,7 @@ class CreateNewMessageViewModel: ObservableObject {
     
     private func fetchAllUsers() {
         FirebaseManager.shared.firestore.collection("users")
+            .whereField("uid", isNotEqualTo: FirebaseManager.shared.auth.currentUser?.uid as Any)
             .getDocuments { documentsSnapshot, error in
                 if let error = error {
                     self.errorMessage = "Failed to fetch users: \(error)"
@@ -25,12 +26,8 @@ class CreateNewMessageViewModel: ObservableObject {
                 }
                 
                 documentsSnapshot?.documents.forEach({ snapshot in
-                    let data = snapshot.data()
-                    let user = ChatUser(data: data)
-                    if user.uid != FirebaseManager.shared.auth.currentUser?.uid {
-                        self.users.append(.init(data: data))
-                    }
-                    
+                    guard let user = try? snapshot.data(as: User.self) else { return }
+                    self.users.append(user)
                 })
             }
     }

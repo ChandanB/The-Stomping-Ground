@@ -11,30 +11,35 @@ import SDWebImageSwiftUI
 
 struct CreateNewMessageView: View {
     
+    let didSelectNewUser: (User) -> ()
+    
+    let chatUser: User?
+    
     @Environment(\.dismiss) private var dismiss
     
     @ObservedObject private var createNewMessageViewModel = CreateNewMessageViewModel()
-    
+        
     var body: some View {
-        NavigationView {
+        NavigationStack{
             ScrollView {
                 Text(createNewMessageViewModel.errorMessage)
                 
                 ForEach(createNewMessageViewModel.users) { user in
                     Button {
                         dismiss()
+                        didSelectNewUser(user)
                     } label: {
                         HStack(spacing: 16) {
-                            WebImage(url: URL(string: "\(user.profileImageUrl)"))
+                            WebImage(url: URL(string: user.profileImageUrl))
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 50, height: 50)
                                 .clipped()
                                 .cornerRadius(50)
                                 .overlay(RoundedRectangle(cornerRadius: 50)
-                                    .stroke(Color(.label), lineWidth: 2)
+                                    .stroke(Color(.label), lineWidth: 1)
                                 )
-                            Text("\(user.name)")
+                            Text(user.name)
                                 .foregroundColor(Color(.label))
                             Spacer()
                         }.padding(.horizontal)
@@ -43,15 +48,17 @@ struct CreateNewMessageView: View {
                         .padding(.vertical, 8)
                 }
             }
-//                .toolbar {
-//                    ToolbarItemGroup(placement: .navigationBarLeading) {
-//                        Button {
-//                            dismiss()
-//                        } label: {
-//                            Text("Cancel")
-//                        }
-//                    }
-//                }
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(chatUser?.name ?? "New Message")
+                .toolbar {
+                    ToolbarItemGroup(placement: .navigationBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Text("Cancel")
+                        }
+                    }
+                }
         }
     }
 }

@@ -21,9 +21,8 @@ struct LoginView: View {
     @State private var systemImage = UIImage(systemName: "person")
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             signInForm
-            .navigationViewStyle(StackNavigationViewStyle())
             .overlay(noAccountText, alignment: .bottom)
             .environment(\.rootPresentationMode, self.$isInLoginMode)
             .navigationTitle("")
@@ -77,13 +76,13 @@ struct LoginView: View {
             self.loginWasSuccessful = true
             self.didCompleteLoginProcess()
         })
-            .navigationBarBackButtonHidden()
-            .navigationViewStyle(StackNavigationViewStyle()))
+            .navigationBarBackButtonHidden())
         { Text("Don't have an account yet? Sign Up") }
             .isDetailLink(false)
     }
     
     private func handleAuthentication() {
+        FirebaseManager.signIn(email, password)
         FirebaseManager.shared.auth.signIn(withEmail: email, password: password) {
             result, err in
             if let err = err {
