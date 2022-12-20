@@ -61,7 +61,7 @@ struct EditableCircularProfileImage: View {
                              photoLibrary: .shared()) {
                     Image(systemName: "pencil.circle.fill")
                         .symbolRenderingMode(.multicolor)
-                        .font(.system(size: 30))
+                        .font(.system(size: 32))
                         .foregroundColor(.accentColor)
                 }
                 .buttonStyle(.borderless)

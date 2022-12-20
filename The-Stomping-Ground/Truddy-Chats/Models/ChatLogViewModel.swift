@@ -65,7 +65,7 @@ class ChatLogViewModel: ObservableObject {
         
         guard let toId = chatUser?.uid else { return }
         
-        let document = FirebaseManager.shared.firestore.collection(FirebaseConstants.messages)
+        let document = FirebaseConstants.messagesRef
             .document(fromId)
             .collection(toId)
             .document()

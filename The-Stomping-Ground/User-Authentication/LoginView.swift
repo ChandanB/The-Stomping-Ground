@@ -19,6 +19,9 @@ struct LoginView: View {
     @State private var loginStatusMessage = ""
     @State private var sgLogo = UIImage(named: "sg-logo")
     @State private var systemImage = UIImage(systemName: "person")
+    
+    @State private var formIsNotValid = true
+
 
     var body: some View {
         NavigationStack {
@@ -43,20 +46,35 @@ struct LoginView: View {
                 }
                 .padding(12)
                 .background(.white)
-    
-                Button {
-                    handleAuthentication()
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("Sign In")
-                            .foregroundColor(.white)
-                            .padding(.vertical, 10)
-                            .font(.system(size: 14, weight: .semibold))
-                        Spacer()
-                    }.background(.blue)
+                
+                if $email.wrappedValue.count > 5 && $password.wrappedValue.count > 6 {
+                    Button {
+                        handleLogin()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Sign In")
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .font(.system(size: 14, weight: .semibold))
+                            Spacer()
+                        }.background(.blue)
+                    }
+                } else {
+                    Button {
+                        handleLogin()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Sign In")
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .font(.system(size: 14, weight: .semibold))
+                            Spacer()
+                        }.background(Color(.gray))
+                    }.disabled(formIsNotValid)
                 }
-                                    
+             
                 if loginWasSuccessful {
                     Text(self.loginStatusMessage)
                         .foregroundColor(.green)
@@ -81,18 +99,15 @@ struct LoginView: View {
             .isDetailLink(false)
     }
     
-    private func handleAuthentication() {
-        FirebaseManager.signIn(email, password)
-        FirebaseManager.shared.auth.signIn(withEmail: email, password: password) {
-            result, err in
-            if let err = err {
-                self.loginWasSuccessful = false
-                self.loginStatusMessage = "Failed to login: \(err)"
-                return
-            }
+    private func handleLogin() {
+        FirebaseManager.signIn(email: email, password: password) {
             self.loginWasSuccessful = true
             self.loginStatusMessage = "Successfully logged in!"
             self.didCompleteLoginProcess()
+        } onError: { errorMessage in
+            self.loginWasSuccessful = false
+            self.loginStatusMessage = "Failed to login: \(String(describing: errorMessage))"
+            return
         }
     }
     

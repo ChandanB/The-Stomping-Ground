@@ -28,7 +28,7 @@ class UserModel: ObservableObject {
     @Published var name: String = ""
     @Published var username: String = ""
     @Published var email: String = ""
-    @Published var about: String = ""
+    @Published var bio: String = ""
     @Published var profileImage: UIImage = UIImage()
 
     
