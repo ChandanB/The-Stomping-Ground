@@ -13,11 +13,10 @@ import FirebaseFirestoreSwift
 struct User: Codable, Identifiable {
     @DocumentID var id: String?
     let uid, name, username, email, profileImageUrl: String
-    var isFollowing: Bool?
+    var isFollowing, isEditable: Bool?
     var bio: String?
     var following, followers: [User]?
     var posts: [Post]?
-    var isEditable: Bool?
 }
 
 @MainActor

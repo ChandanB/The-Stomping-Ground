@@ -7,6 +7,27 @@
 
 import SwiftUI
 
+/// Provides fast rendering of responsive images
+extension Double {
+    var responsiveW: Double { return (UIScreen.main.bounds.size.width * self) / 100 }
+    var responsiveH: Double { return (UIScreen.main.bounds.size.height * self) / 100 }
+}
+
+/// Enumerate through save errors
+enum SaveError: Error {
+    case unfoundedPath(desc: String)
+    case uniqueIssue(desc: String)
+    case setIssue(desc: String)
+    case noDocument(desc: String)
+}
+
+/// Enumerate through data import errors
+enum GetError: Error {
+    case unfoundedDocument(desc: String)
+    case noDocument(desc: String)
+    case loadIssue(desc: String)
+}
+
 struct RootPresentationModeKey: EnvironmentKey {
     static let defaultValue: Binding<RootPresentationMode> = .constant(RootPresentationMode())
 }

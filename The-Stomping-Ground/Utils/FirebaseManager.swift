@@ -8,6 +8,7 @@
 import SwiftUI
 import Firebase
 import FirebaseStorage
+import FirebaseFirestore
 
 class FirebaseManager: NSObject {
     
@@ -19,7 +20,7 @@ class FirebaseManager: NSObject {
     var firestoreListener: ListenerRegistration?
     
     static let shared = FirebaseManager()
-    
+
     override init() {
         FirebaseApp.configure()
         self.auth = Auth.auth()
@@ -308,6 +309,59 @@ class FirebaseManager: NSObject {
     //        }
     //    }
     
+    // MARK: Post services provider
+    /// This function save our datas to firebase cloud storage
+    /// The accuracy of the sent data must be checked before the service and the user must be informed.
+    func postWithCollectionReferance(_ data: [String: Any]? = [:],
+                                     referance: String, serviceType: ServiceType,
+                                     result: @escaping(Result<Any?, FirebaseServiceResult>) -> Void) {
+        let collectionReferance = self.firestore.collection(referance)
+        
+        DispatchQueue.main.async {
+            switch serviceType {
+            case .delete(let documentId):
+                collectionReferance.document(documentId).delete { err in
+                    guard err == nil else { return result(.failure(.deleteError))}
+                    return result(.success("LOCAL_DELETE_SUCCESSFULLY"))
+                }
+                
+            case .update(let documentId):
+                collectionReferance.document(documentId).updateData(data!) { err in
+                    guard err == nil else { return result(.failure(.updateError))}
+                    return result(.success("LOCAL_UPDATE_SUCCESSFULLY"))
+                }
+                
+            case .save(let documentId):
+                collectionReferance.document(documentId).setData(data!) { err in
+                    guard err == nil else { return result(.failure(.saveError))}
+                    return result(.success("LOCAL_SAVE_SUCCESSFULLY"))
+                }
+            }
+        }
+    }
+    
+    // MARK: Get services provider
+    /// This function read our datas to firebase cloud storage
+    func getWithCollectionReferance(referance: String, documentId: String, result: @escaping(Result<Data, FirebaseServiceResult>) -> Void) {
+        let collectionReferance = self.firestore.collection(referance).document(documentId)
+        
+        DispatchQueue.main.async {
+            collectionReferance.getDocument { snapshot, err in
+                guard err == nil else { return result(.failure(.documentNotFound))}
+                if let snapshot = snapshot?.data() {
+                    let data = try? JSONSerialization.data(withJSONObject: snapshot, options: .prettyPrinted)
+                    if let data = data {
+                        return result(.success(data))
+                    } else {
+                        return result(.failure(.parseError))
+                    }
+                } else {
+                    return result(.failure(.loadError))
+                }
+            }
+        }
+    }
+    
     static func uploadPostImage(image: UIImage, filename: String, completion: @escaping (String) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 1) else { return }
         
@@ -329,6 +383,19 @@ class FirebaseManager: NSObject {
             }
         }
     }
-    
-    
+}
+
+enum FirebaseServiceResult: Error {
+    case saveError
+    case updateError
+    case deleteError
+    case documentNotFound
+    case parseError
+    case loadError
+}
+
+enum ServiceType {
+    case save(documentId: String)
+    case update(documentId: String)
+    case delete(documentId: String)
 }

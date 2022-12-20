@@ -10,9 +10,16 @@ import FirebaseFirestoreSwift
 
 struct Post: Codable, Identifiable {
     @DocumentID var id: String?
-    let text, imageUrl: String
+    let text: String
     let createdAt, numLikes: Int
-    var fromNow: String?
-    var hasLiked: Bool?
-    var commenrs: [Comment]?
+    let postImage, postDescription, fromNow: String?
+   
+    let hasLiked: Bool?
+    let postComments: [Comment]?
+    let postLikes: [String]?
+    
+    var postIsVideo: Bool? = false
+    var postImageURL: URL? {
+        URL(string: postImage ?? "")
+    }
 }

@@ -90,7 +90,7 @@ struct LoginView: View {
     }
     
     private var noAccountText: some View {
-        NavigationLink(destination: CreateAccountView(didCompleteRegisterProcess: {
+        NavigationLink(destination: RegisterAccountView(didCompleteRegisterProcess: {
             self.loginWasSuccessful = true
             self.didCompleteLoginProcess()
         })

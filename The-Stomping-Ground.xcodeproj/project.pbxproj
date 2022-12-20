@@ -23,7 +23,7 @@
 		113D7A60294D75EF0032A457 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 113D7A5F294D75EF0032A457 /* FirebaseMessaging */; };
 		113D7A62294D75EF0032A457 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 113D7A61294D75EF0032A457 /* FirebaseStorage */; };
 		113D7A6C294D77DD0032A457 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113D7A6B294D77DD0032A457 /* LoginView.swift */; };
-		113D7A6E294D77DF0032A457 /* CreateAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113D7A6D294D77DF0032A457 /* CreateAccountView.swift */; };
+		113D7A6E294D77DF0032A457 /* RegisterAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113D7A6D294D77DF0032A457 /* RegisterAccountView.swift */; };
 		114C8DFD294F67CD00028512 /* TruddyChatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */; };
 		114C8E00294F6A5300028512 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 114C8DFF294F6A5300028512 /* SDWebImageSwiftUI */; };
 		114C8E02294F7E1300028512 /* CreateNewMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */; };
@@ -43,6 +43,7 @@
 		11E236A229502BB8000ED3B1 /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A129502BB8000ED3B1 /* MessageView.swift */; };
 		11E236A6295036AD000ED3B1 /* PostModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A5295036AD000ED3B1 /* PostModel.swift */; };
 		11E236A82950374F000ED3B1 /* CommentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A72950374F000ED3B1 /* CommentModel.swift */; };
+		11E236AB29513C0B000ED3B1 /* SwiftUIX in Frameworks */ = {isa = PBXBuildFile; productRef = 11E236AA29513C0B000ED3B1 /* SwiftUIX */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,7 +75,7 @@
 		113D7A41294D73B40032A457 /* The_Stomping_GroundUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = The_Stomping_GroundUITests.swift; sourceTree = "<group>"; };
 		113D7A43294D73B40032A457 /* The_Stomping_GroundUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = The_Stomping_GroundUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		113D7A6B294D77DD0032A457 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
-		113D7A6D294D77DF0032A457 /* CreateAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAccountView.swift; sourceTree = "<group>"; };
+		113D7A6D294D77DF0032A457 /* RegisterAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterAccountView.swift; sourceTree = "<group>"; };
 		114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruddyChatsViewModel.swift; sourceTree = "<group>"; };
 		114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageViewModel.swift; sourceTree = "<group>"; };
 		114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageView.swift; sourceTree = "<group>"; };
@@ -100,6 +101,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				11E236AB29513C0B000ED3B1 /* SwiftUIX in Frameworks */,
 				114C8E00294F6A5300028512 /* SDWebImageSwiftUI in Frameworks */,
 				113D7A60294D75EF0032A457 /* FirebaseMessaging in Frameworks */,
 				113D7A5A294D75EF0032A457 /* FirebaseFirestoreSwift in Frameworks */,
@@ -213,7 +215,7 @@
 		118AE37C294E962400331D6C /* User-Authentication */ = {
 			isa = PBXGroup;
 			children = (
-				113D7A6D294D77DF0032A457 /* CreateAccountView.swift */,
+				113D7A6D294D77DF0032A457 /* RegisterAccountView.swift */,
 				113D7A6B294D77DD0032A457 /* LoginView.swift */,
 			);
 			path = "User-Authentication";
@@ -289,6 +291,7 @@
 				113D7A5F294D75EF0032A457 /* FirebaseMessaging */,
 				113D7A61294D75EF0032A457 /* FirebaseStorage */,
 				114C8DFF294F6A5300028512 /* SDWebImageSwiftUI */,
+				11E236AA29513C0B000ED3B1 /* SwiftUIX */,
 			);
 			productName = "The-Stomping-Ground";
 			productReference = 113D7A22294D73B30032A457 /* The-Stomping-Ground.app */;
@@ -365,6 +368,7 @@
 			packageReferences = (
 				113D7A50294D75EF0032A457 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				114C8DFE294F6A5300028512 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
+				11E236A929513C0B000ED3B1 /* XCRemoteSwiftPackageReference "SwiftUIX" */,
 			);
 			productRefGroup = 113D7A23294D73B30032A457 /* Products */;
 			projectDirPath = "";
@@ -424,7 +428,7 @@
 				11E236A229502BB8000ED3B1 /* MessageView.swift in Sources */,
 				113D7A6C294D77DD0032A457 /* LoginView.swift in Sources */,
 				11E236A6295036AD000ED3B1 /* PostModel.swift in Sources */,
-				113D7A6E294D77DF0032A457 /* CreateAccountView.swift in Sources */,
+				113D7A6E294D77DF0032A457 /* RegisterAccountView.swift in Sources */,
 				11E2369829501863000ED3B1 /* ChatLogViewModel.swift in Sources */,
 				11E236A82950374F000ED3B1 /* CommentModel.swift in Sources */,
 				118AE377294D9CB800331D6C /* EditProfileView.swift in Sources */,
@@ -798,6 +802,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		11E236A929513C0B000ED3B1 /* XCRemoteSwiftPackageReference "SwiftUIX" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftUIX/SwiftUIX.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -850,6 +862,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 114C8DFE294F6A5300028512 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
 			productName = SDWebImageSwiftUI;
+		};
+		11E236AA29513C0B000ED3B1 /* SwiftUIX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 11E236A929513C0B000ED3B1 /* XCRemoteSwiftPackageReference "SwiftUIX" */;
+			productName = SwiftUIX;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
