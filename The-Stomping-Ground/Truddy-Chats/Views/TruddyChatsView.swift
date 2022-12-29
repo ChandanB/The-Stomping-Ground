@@ -97,7 +97,9 @@ struct TruddyChatsView: View {
     private var messagesView: some View {
         ScrollView {
             ForEach(truddyChatsViewModel.recentMessages) { recentMessage in
-                VStack {
+                LazyVStack {
+                    Spacer()
+
                     Button {
                         let uid = FirebaseManager.shared.auth.currentUser?.uid == recentMessage.fromId ? recentMessage.toId : recentMessage.fromId
                         
@@ -111,10 +113,10 @@ struct TruddyChatsView: View {
                             WebImage(url: URL(string: recentMessage.profileImageUrl))
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 64, height: 64)
+                                .frame(width: 40, height: 40)
                                 .clipped()
-                                .cornerRadius(64)
-                                .overlay(RoundedRectangle(cornerRadius: 64)
+                                .cornerRadius(40)
+                                .overlay(RoundedRectangle(cornerRadius: 40)
                                             .stroke(Color.black, lineWidth: 1))
                                 .shadow(radius: 5)
                             

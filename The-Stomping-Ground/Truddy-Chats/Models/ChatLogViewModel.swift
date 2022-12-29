@@ -70,7 +70,7 @@ class ChatLogViewModel: ObservableObject {
             .collection(toId)
             .document()
         
-        let msg = ChatMessage(id: nil, fromId: fromId, toId: toId, text: chatText, timestamp: Date())
+        let msg = ChatMessage(id: nil, status: "offline", fromId: fromId, toId: toId, text: chatText, timestamp: Date(), seen: false)
         
         try? document.setData(from: msg) { error in
             if let error = error {
