@@ -28,11 +28,10 @@ class UserModel: ObservableObject {
     @Published var username: String = ""
     @Published var email: String = ""
     @Published var bio: String = ""
-    @Published var profileImage: UIImage = UIImage()
+    @Published var profileImage: UIImage = (UIImage(named: "sg-logo") ?? UIImage())
 
     
     // MARK: - Profile Image
-    
     enum ImageState {
         case empty
         case loading(Progress)

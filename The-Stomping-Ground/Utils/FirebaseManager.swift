@@ -40,27 +40,21 @@ class FirebaseManager: NSObject {
         })
     }
     
-    static func signUp(bio: String, name: String, username: String, email: String, password: String, image: UIImage?, onSuccess: @escaping () -> Void, onError:  @escaping (_ errorMessage: String?) -> Void) {
+    static func signUp(bio: String, name: String, username: String, email: String, password: String, image: UIImage, onSuccess: @escaping () -> Void, onError:  @escaping (_ errorMessage: String?) -> Void) {
+        
         Auth.auth().createUser(withEmail: email, password: password, completion: { (result, err) in
             if let err = err {
                 print("Failed to create user:", err)
                 onError(err.localizedDescription)
                 return
             }
-            
-            guard let uid = result?.user.uid else { return }
-            if let image = image {
-                self.uploadUserProfileImage(image: image) { (profileImageUrl) in
-                    self.uploadUser(withUID: uid, bio: bio, name: name, username: username, email: email, profileImageUrl: profileImageUrl) {
-                        onSuccess()
-                    }
-                }
-            } else {
-                guard let defaultImage = UIImage(systemName: "person") else { return }
-                self.uploadUserProfileImage(image: defaultImage) { (profileImageUrl) in
-                    self.uploadUser(withUID: uid, bio: bio, name: name, username: username, email: email, profileImageUrl: profileImageUrl) {
-                        onSuccess()
-                    }
+            guard let uid = result?.user.uid else {
+                return
+            }
+            self.uploadUserProfileImage(image: image) { (profileImageUrl) in
+                self.uploadUser(withUID: uid, bio: bio, name: name, username: username, email: email, profileImageUrl: profileImageUrl) {
+                    onSuccess()
+                    return
                 }
             }
         })

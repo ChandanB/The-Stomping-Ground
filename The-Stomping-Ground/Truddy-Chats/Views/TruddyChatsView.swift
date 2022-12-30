@@ -16,7 +16,9 @@ struct TruddyChatsView: View {
     @ObservedObject private var truddyChatsViewModel = TruddyChatsViewModel()
     
     private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
-
+    
+    @Environment(\.dismiss) private var dismiss
+    
     var body: some View {
         NavigationStack {
             VStack {
@@ -26,9 +28,9 @@ struct TruddyChatsView: View {
                     ChatLogView(chatUser: self.chatUser)
                 }
             }
-//            .fullScreenCover(isPresented: $shouldNavigateToChatLogView, content: {
-//                ChatLogView(chatUser: self.chatUser)
-//            })
+            //            .fullScreenCover(isPresented: $shouldNavigateToChatLogView, content: {
+            //                ChatLogView(chatUser: self.chatUser)
+            //            })
             .overlay(newMessageButton, alignment: .bottom)
             .navigationBarHidden(true)
         }
@@ -38,30 +40,42 @@ struct TruddyChatsView: View {
     private var truddyNavBar: some View {
         HStack(spacing: 16) {
             
-            WebImage(url: URL(string: truddyChatsViewModel.chatUser?.profileImageUrl ?? ""))
-                .resizable()
-                .scaledToFill()
-                .frame(width: 50, height: 50)
-                .clipped()
-                .cornerRadius(50)
-                .overlay(RoundedRectangle(cornerRadius: 44)
-                    .stroke(Color(.label), lineWidth: 1)
-                )
-                .shadow(radius: 5)
-                .padding(.leading, 16)
+            Button(action: {
+                dismiss()
+            }) {
+                Image(systemName: "arrow.left")
+            }.padding()
             
-            VStack(alignment: .leading, spacing: 4) {
-                let name = truddyChatsViewModel.chatUser?.name ?? ""
-                Text(name)
-                    .font(.system(size: 24, weight: .bold))
+            Spacer()
+                        
+            HStack {
+                WebImage(url: URL(string: truddyChatsViewModel.chatUser?.profileImageUrl ?? ""))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 40, height: 40)
+                    .clipped()
+                    .cornerRadius(40)
+                    .overlay(RoundedRectangle(cornerRadius: 44)
+                        .stroke(Color(.label), lineWidth: 1)
+                    )
+                    .shadow(radius: 3)
+                    .padding(.leading, 16)
                 
-                HStack {
-                    Circle()
-                        .foregroundColor(.green)
-                        .frame(width: 12, height: 12)
-                    Text("online")
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(.lightGray))
+                VStack(alignment: .leading, spacing: 4) {
+                    let name = truddyChatsViewModel.chatUser?.name ?? ""
+                    
+                    Text(name)
+                        .font(.system(size: 16, weight: .bold))
+                    
+                    HStack {
+                        Circle()
+                            .foregroundColor(.green)
+                            .frame(width: 6, height: 6)
+                        Text("online")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(.lightGray))
+                    }
+                   
                 }
             }
             
@@ -93,13 +107,13 @@ struct TruddyChatsView: View {
             
         }
     }
-        
+    
     private var messagesView: some View {
         ScrollView {
             ForEach(truddyChatsViewModel.recentMessages) { recentMessage in
                 LazyVStack {
                     Spacer()
-
+                    
                     Button {
                         let uid = FirebaseManager.shared.auth.currentUser?.uid == recentMessage.fromId ? recentMessage.toId : recentMessage.fromId
                         
@@ -117,8 +131,8 @@ struct TruddyChatsView: View {
                                 .clipped()
                                 .cornerRadius(40)
                                 .overlay(RoundedRectangle(cornerRadius: 40)
-                                            .stroke(Color.black, lineWidth: 1))
-                                .shadow(radius: 5)
+                                    .stroke(Color.black, lineWidth: 1))
+                                .shadow(radius: 3)
                             
                             
                             VStack(alignment: .leading, spacing: 8) {
@@ -138,13 +152,13 @@ struct TruddyChatsView: View {
                                 .foregroundColor(Color(.label))
                         }
                     }
-
+                    
                     Divider()
                         .padding(.vertical, 8)
                 }.padding(.horizontal)
                 
             }.padding(.bottom, 50)
-            }
+        }
     }
     
     @State var shouldShowNewMessageScreen = false
@@ -162,11 +176,12 @@ struct TruddyChatsView: View {
             }
             .foregroundColor(.white)
             .padding(.vertical)
-                .background(Color.blue)
-                .cornerRadius(32)
-                .padding(.horizontal)
-                .shadow(radius: 15)
+            .background(Color.blue)
+            .cornerRadius(32)
+            .padding(.horizontal)
+            .shadow(radius: 15)
         }
+        .padding(12)
         .fullScreenCover(isPresented: $shouldShowNewMessageScreen) {
             CreateNewMessageView(didSelectNewUser: { user in
                 print(user.email)
@@ -176,29 +191,29 @@ struct TruddyChatsView: View {
                 self.chatLogViewModel.fetchMessages()
             }, chatUser: truddyChatsViewModel.chatUser)
         }
-//        NavigationLink {
-//            CreateNewMessageView(didSelectNewUser: { user in
-//                self.shouldNavigateToChatLogView.toggle()
-//                self.chatUser = user
-//                self.chatLogViewModel.chatUser = user
-//                self.chatLogViewModel.fetchMessages()
-//            })
-//            .navigationTitle(truddyChatsViewModel.chatUser?.name ?? "")
-//        } label: {
-//            HStack {
-//                Spacer()
-//                Text("+ New Message")
-//                    .font(.system(size: 16, weight: .bold))
-//                Spacer()
-//            }
-//            .foregroundColor(.white)
-//            .padding(.vertical)
-//                .background(Color.blue)
-//                .cornerRadius(32)
-//                .padding(.horizontal)
-//                .shadow(radius: 15)
-//        }.isDetailLink(false)
-            
+        //        NavigationLink {
+        //            CreateNewMessageView(didSelectNewUser: { user in
+        //                self.shouldNavigateToChatLogView.toggle()
+        //                self.chatUser = user
+        //                self.chatLogViewModel.chatUser = user
+        //                self.chatLogViewModel.fetchMessages()
+        //            })
+        //            .navigationTitle(truddyChatsViewModel.chatUser?.name ?? "")
+        //        } label: {
+        //            HStack {
+        //                Spacer()
+        //                Text("+ New Message")
+        //                    .font(.system(size: 16, weight: .bold))
+        //                Spacer()
+        //            }
+        //            .foregroundColor(.white)
+        //            .padding(.vertical)
+        //                .background(Color.blue)
+        //                .cornerRadius(32)
+        //                .padding(.horizontal)
+        //                .shadow(radius: 15)
+        //        }.isDetailLink(false)
+        
     }
     
     

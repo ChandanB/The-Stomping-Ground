@@ -47,7 +47,7 @@ struct LoginView: View {
                 .padding(12)
                 .background(.white)
                 
-                if $email.wrappedValue.count > 5 && $password.wrappedValue.count > 6 {
+                if $email.wrappedValue.count > 5 && $password.wrappedValue.count > 5 {
                     Button {
                         handleLogin()
                     } label: {
@@ -100,15 +100,29 @@ struct LoginView: View {
     }
     
     private func handleLogin() {
-        FirebaseManager.signIn(email: email, password: password) {
-            self.loginWasSuccessful = true
-            self.loginStatusMessage = "Successfully logged in!"
-            self.didCompleteLoginProcess()
-        } onError: { errorMessage in
+        // Validate email
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        let isValidEmail = emailPred.evaluate(with: email)
+        
+        // Validate password
+        let isValidPassword = password.count >= 6
+        
+        if isValidEmail && isValidPassword {
+          FirebaseManager.signIn(email: email, password: password) {
+              self.loginWasSuccessful = true
+              self.loginStatusMessage = "Successfully logged in!"
+              self.didCompleteLoginProcess()
+          } onError: { errorMessage in
+              self.loginWasSuccessful = false
+              self.loginStatusMessage = "Failed to login: \(String(describing: errorMessage))"
+              return
+          }
+        } else {
             self.loginWasSuccessful = false
-            self.loginStatusMessage = "Failed to login: \(String(describing: errorMessage))"
-            return
+            self.loginStatusMessage = "Invalid Email or Password"
         }
+        
     }
     
 }

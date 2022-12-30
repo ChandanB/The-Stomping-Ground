@@ -8,86 +8,83 @@
 import SwiftUI
 
 enum Tab {
-  case home, search, post, notifications, messages
+    case home, search, post, notifications, messages
 }
 
 struct ContentView: View {
     
     @State private var selectedTab: Tab = .home
-
+    
     var body: some View {
-        VStack {
-            if selectedTab == .home {
-                CustomNavigationBar(leadingButton: {
-                          AnyView(Button(action: {
-                            // Handle the leading button tap
-                          }) {
-                            Image(systemName: "camera")
-                              .font(.system(size: 25))
-                          })
-                        }, trailingButton: {
-                          AnyView(NavigationLink(destination: TruddyChatsView()) {
-                            Image(systemName: "paperplane")
-                              .font(.system(size: 25))
-                          })
-                        })
-            }
+        NavigationView {
+            VStack {
+                if selectedTab == .home {
+                    HomeNavigationBar()
+                }
+                
+                TabView(selection: $selectedTab) {
+                    HomeView()
+                        .tabItem {
+                            Image(systemName: "house")
+                            Text("Home")
+                        }.tag(Tab.home)
                     
-            TabView(selection: $selectedTab) {
-                HomeView()
-                    .tabItem {
-                        Image(systemName: "house")
-                        Text("Home")
-                    }.tag(Tab.home)
-                
-                SearchView()
-                    .tabItem {
-                        Image(systemName: "magnifyingglass")
-                        Text("Search")
-                    }.tag(Tab.search)
-                
-                AddPostView()
-                    .tabItem {
-                        Image(systemName: "plus")
-                        Text("Add Post")
-                    }.tag(Tab.post)
-                
-                AddPostView()
-                    .tabItem {
-                        Image(systemName: "bell")
-                        Text("Notifications")
-                    }.tag(Tab.notifications)
-                
-                TruddyChatsView()
-                    .tabItem {
-                        Image(systemName: "message")
-                        Text("Truddy Chats")
-                    }.tag(Tab.messages)
+                    SearchView()
+                        .tabItem {
+                            Image(systemName: "magnifyingglass")
+                            Text("Search")
+                        }.tag(Tab.search)
+                    
+                    AddPostView()
+                        .tabItem {
+                            Image(systemName: "plus")
+                            Text("Add Post")
+                        }.tag(Tab.post)
+                    
+                    AddPostView()
+                        .tabItem {
+                            Image(systemName: "bell")
+                            Text("Notifications")
+                        }.tag(Tab.notifications)
+                    
+                    EditProfileView()
+                        .tabItem {
+                            Image(systemName: "person")
+                            Text("Profile")
+                        }.tag(Tab.messages)
+                }
             }
         }
+        
     }
     
-    struct CustomNavigationBar: View {
-        let leadingButton: () -> AnyView
-        let trailingButton: () -> AnyView
-        
+    struct HomeNavigationBar: View {
         var body: some View {
             HStack {
+                Button(action: {
+                    // Add post action
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundColor(.black)
+                }
+                
+                Spacer()
+                
                 Text("Stomping Ground Online")
                     .font(.system(size: 20))
                 
                 Spacer()
                 
-                NavigationLink(destination: TruddyChatsView()) {
+                NavigationLink(destination: TruddyChatsView().navigationBarBackButtonHidden()) {
                     Image(systemName: "message")
-                        .font(.system(size: 25))
+                      .foregroundColor(.black)
                 }
-                
             }
             .padding()
-            .background(Color.white)
         }
     }
+    
+    
 }
 
 struct HomeView: View {
@@ -111,11 +108,15 @@ struct HomeView: View {
                 }
                 .frame(height: 100)
                 
-                List {
-                    ForEach(posts) { post in
-                        PostRow(post: post)
+                ScrollView {
+                    VStack {
+                        ForEach(posts) { post in
+                            PostRow(post: post)
+                        }
+                        .padding()
+                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 20))
                     }
-                    .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 20))
+                    
                 }
             }
             .navigationBarHidden(true)

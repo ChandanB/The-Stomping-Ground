@@ -11,25 +11,48 @@ import PhotosUI
 
 struct RegisterAccountView: View {
     
-    let didCompleteRegisterProcess: () -> ()
+    @State private var name = ""
+    @State private var username = ""
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var bio = ""
+    @State private var image: UIImage?
+
+    
+    @State private var creationStatusMessage = ""
+    @State private var accountSuccessfullyCreated = false
+    
+    @State private var isPasswordVisible: Bool = false
+    
+    @StateObject private var userModel = UserModel()
     
     @Environment(\.dismiss) private var dismiss
     
-    @State private var password = ""
-    @State private var accountSuccessfullyCreated = false
-    @State private var creationStatusMessage = ""
-    
-    @StateObject private var userModel = UserModel()
-    @ObservedObject private var formViewModel = FormViewModel()
-    @State private var isPasswordVisible: Bool = false
-    @State private var isActive: Bool = false
-
-
     let aboutMeLimit = 120
-
+    let didCompleteRegisterProcess: () -> ()
+    
+    var isFormValid: Bool {
+        if name.isEmpty {
+            return false
+        } else if username.isEmpty || username.contains(" ") {
+            return false
+        } else {
+            let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+            let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+            if !emailPred.evaluate(with: email) {
+                return false
+            } else if password.count < 6 {
+                return false
+            } else if password != confirmPassword {
+                return false
+            }
+        }
+        return true
+    }
+    
     var body: some View {
         NavigationStack {
-            Text("Join the SG family!" )
             createAccountForm
         }
         .overlay(alreadyHaveAccountText, alignment: .bottom)
@@ -41,70 +64,23 @@ struct RegisterAccountView: View {
     private var createAccountForm: some View {
         GeometryReader { geometry in
             VStack(spacing: 12) {
-                Group {
-                      TextField("Name", text: $userModel.name)
-                          .autocorrectionDisabled()
-
-                      TextField("Username", text: $userModel.username)
-                          .autocorrectionDisabled()
-                      
-                      TextField("Email", text: $userModel.email)
-                          .keyboardType(.emailAddress)
-                          .autocapitalization(.none)
-                          .autocorrectionDisabled()
-                      HStack {
-                          if isPasswordVisible {
-                              TextField("Password", text: $formViewModel.password)
-                          } else {
-                              SecureField("Password", text: $formViewModel.password)
-                          }
-                          
-                          Button(action: {
-                              self.isPasswordVisible.toggle()
-                          }, label: {
-                              Image(systemName: isPasswordVisible ? "eye" : "eye.slash")
-                                  .foregroundColor( isPasswordVisible ? .green : .gray)
-                                  .frame(width: 20, height: 20, alignment: .center)
-                          })
-                      }
-                }
-                .padding()
-                .background(.white)
+                
+                FormTextFields
                 
                 HStack {
+                    
+                    EditableCircularProfileImage(viewModel: userModel)
+                        .padding(.bottom, 16)
+                    
                     VStack {
-                        ForEach(formViewModel.validations) { validation in
-                            HStack {
-                                Image(systemName: validation.state == .success ? "checkmark.circle.fill" : "checkmark.circle")
-                                    .foregroundColor(validation.state == .success ? Color.green : Color.gray.opacity(0.3))
-                                Text(validation.validationType.message(fieldName: validation.field.rawValue))
-                                    .strikethrough(validation.state == .success)
-                                    .font(Font.caption)
-                                    .foregroundColor(validation.state == .success ? Color.gray : .black)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .padding([.leading], 15)
-                        }
-                        .frame(height: 16)
-                    }
-                }
-                                
-                HStack {
-                    Button {
-
-                    } label: {
-                        EditableCircularProfileImage(viewModel: userModel)
-                            .padding(.bottom, 16)
-                    }
-                    VStack {
-                        TextField("Bio", text: $userModel.bio, axis: .vertical)
+                        TextField("Bio", text: $bio, axis: .vertical)
                             .padding(32)
                             .lineLimit(3, reservesSpace: true)
                             .background(.white)
                             .textFieldStyle(PlainTextFieldStyle())
                             .cornerRadius(12)
-                            .onReceive(Just($userModel.bio)) { _ in limitText(aboutMeLimit) }
-                        Text("\($userModel.bio.wrappedValue.count)" + " / " + "\(aboutMeLimit)")
+                            .onReceive(Just(bio)) { _ in limitText(aboutMeLimit) }
+                        Text("\(bio.count)" + " / " + "\(aboutMeLimit)")
                     }
                 }
                 
@@ -119,8 +95,8 @@ struct RegisterAccountView: View {
                             .font(.system(size: 14, weight: .semibold))
                         Spacer()
                     }
-                    .disabled(isActive)
-                    .background(.blue)
+                    .disabled(!isFormValid)
+                    .background(isFormValid ? Color.blue : Color.gray)
                 }
                 
                 if accountSuccessfullyCreated {
@@ -138,6 +114,45 @@ struct RegisterAccountView: View {
         }
     }
     
+    private var FormTextFields: some View {
+        Group {
+            TextField("Name", text: $name)
+                .autocorrectionDisabled()
+            
+            TextField("Username", text: $username)
+                .autocorrectionDisabled()
+            
+            TextField("Email", text: $email)
+                .textContentType(.emailAddress)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+                .autocorrectionDisabled()
+            
+            if isPasswordVisible {
+                TextField("Password", text: $password)
+            } else {
+                SecureField("Password", text: $password)
+            }
+            
+            HStack {
+                if isPasswordVisible {
+                    TextField("Confirm Password", text: $confirmPassword)
+                } else {
+                    SecureField("Confirm Password", text: $confirmPassword)
+                }
+                
+                Button(action: {
+                    self.isPasswordVisible.toggle()
+                }, label: {
+                    Image(systemName: isPasswordVisible ? "eye" : "eye.slash")
+                        .foregroundColor( isPasswordVisible ? .green : .gray)
+                        .frame(width: 20, height: 20, alignment: .center)
+                })
+            }
+        }
+        .padding()
+    }
+    
     private var alreadyHaveAccountText: some View {
         Button {
             dismiss()
@@ -147,150 +162,166 @@ struct RegisterAccountView: View {
     }
     
     private func handleAuthentication() {
-        let email: String = $userModel.email.wrappedValue
-        let bio: String = $userModel.bio.wrappedValue
-        let username: String = $userModel.username.wrappedValue
-        let name: String = $userModel.name.wrappedValue
-        let image: UIImage = userModel.profileImage
+        var image: UIImage = userModel.profileImage
         
-        FirebaseManager.signUp(bio: bio, name: name, username: username, email: email, password: password, image: image) {
-            self.accountSuccessfullyCreated = true
-            self.creationStatusMessage = "Successfully created user!"
-            self.didCompleteRegisterProcess()
-        } onError: { errorMessage in
-            self.accountSuccessfullyCreated = false
-            self.creationStatusMessage = "Failed to create user: \(String(describing: errorMessage))"
-            return
+        if image == UIImage() {
+            image = UIImage(systemName: "profile") ?? UIImage()
+        }
+        
+        let isValid = checkIfFormIsValid(name: name, username: username, email: email, password: password)
+        
+        if isValid {
+            FirebaseManager.signUp(bio: bio, name: name, username: username, email: email, password: password, image: image) {
+                self.accountSuccessfullyCreated = true
+                self.creationStatusMessage = "Successfully created user!"
+                self.didCompleteRegisterProcess()
+            } onError: { errorMessage in
+                self.accountSuccessfullyCreated = false
+                self.creationStatusMessage = "Failed to create user: \(String(describing: errorMessage))"
+                return
+            }
         }
     }
     
+    private func checkIfFormIsValid(name: String, username: String, email: String, password: String) -> Bool {
+        var isValid = true
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        
+        if name.isEmpty {
+            isValid = false
+            self.accountSuccessfullyCreated = false
+            self.creationStatusMessage = "Tip: name cannot be empty"
+        } else if username.isEmpty || username.contains(" ") {
+            isValid = false
+            self.accountSuccessfullyCreated = false
+            self.creationStatusMessage = "Tip: username cannot contain spaces"
+        } else if !emailPred.evaluate(with: email) {
+            isValid = false
+            self.accountSuccessfullyCreated = false
+            self.creationStatusMessage = "Invalid email address"
+        } else if password.count < 6 || !password.hasSpecialCharacters() || !password.hasUppercasedCharacters() {
+            isValid = false
+            self.accountSuccessfullyCreated = false
+            self.creationStatusMessage = "Password must contain 6 characters, a special character, and an uppercase letter"
+        } else if password != confirmPassword {
+            isValid = false
+            self.accountSuccessfullyCreated = false
+            self.creationStatusMessage = "The passwords do not match"
+        }
+        
+        return isValid
+    }
+    
     private func limitText(_ upper: Int) {
-        if $userModel.bio.wrappedValue.count > upper {
-            $userModel.bio.wrappedValue = String($userModel.bio.wrappedValue.prefix(upper))
+        if bio.count > upper {
+            bio = String(bio.prefix(upper))
         }
     }
 }
 
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
-        LoginView(didCompleteLoginProcess: {})
+        RegisterAccountView(didCompleteRegisterProcess: {})
+        //        LoginView(didCompleteLoginProcess: {})
     }
 }
 
-class FormViewModel: ObservableObject {
-    @Published var password = ""
-    @Published var validations: [Validation] = []
-    @Published var isValid: Bool = false
-
-    private var cancellableSet: Set<AnyCancellable> = []
-
-    init() {
-        // Validations
-        passwordPublisher
-            .receive(on: RunLoop.main)
-            .assign(to: \.validations, on: self)
-            .store(in: &cancellableSet)
-        
-        // isValid
-        passwordPublisher
-            .receive(on: RunLoop.main)
-            .map { validations in
-                return validations.filter { validation in
-                    return ValidationState.failure == validation.state
-                }.isEmpty
-            }
-            .assign(to: \.isValid, on: self)
-            .store(in: &cancellableSet)
-    }
-    
-    private var passwordPublisher: AnyPublisher<[Validation], Never> {
-        $password
-            .removeDuplicates()
-            .map { password in
-                
-                var validations: [Validation] = []
+//class FormViewModel: ObservableObject {
+//    @Published var password = ""
+//    @Published var confirmPassword = ""
+//    @Published var validations: [Validation] = []
+//    @Published var isValid: Bool = false
+//
+//    private var cancellableSet: Set<AnyCancellable> = []
+//
+//    init() {
+//        // Validations
+//        passwordPublisher
+//            .receive(on: RunLoop.main)
+//            .assign(to: \.validations, on: self)
+//            .store(in: &cancellableSet)
+//
+//        // isValid
+//        passwordPublisher
+//            .receive(on: RunLoop.main)
+//            .map { validations in
+//                return validations.filter { validation in
+//                    return ValidationState.failure == validation.state
+//                }.isEmpty
+//            }
+//            .assign(to: \.isValid, on: self)
+//            .store(in: &cancellableSet)
+//    }
+//
+//    private var passwordPublisher: AnyPublisher<[Validation], Never> {
+//        $password
+//            .removeDuplicates()
+//            .map { password in
+//
+//                var validations: [Validation] = []
 //                validations.append(Validation(string: password,
-//                                              id: 0,
+//                                              id: 2,
 //                                              field: .password,
-//                                              validationType: .isNotEmpty))
-                
-                validations.append(Validation(string: password,
-                                              id: 1,
-                                              field: .password,
-                                              validationType: .minCharacters(min: 6)))
-                
-                validations.append(Validation(string: password,
-                                              id: 2,
-                                              field: .password,
-                                              validationType: .hasSymbols))
-                
-                validations.append(Validation(string: password,
-                                              id: 3,
-                                              field: .password,
-                                              validationType: .hasUppercasedLetters))
-                return validations
-            }
-            .eraseToAnyPublisher()
-    }
-    
-    
-    enum Field: String {
-        case username
-        case password
-        case email
-        case name
-    }
-    
-    enum ValidationState {
-        case success
-        case failure
-    }
-    
-    
-    enum ValidationType {
-//        case isNotEmpty
-        case minCharacters(min: Int)
-        case hasSymbols
-        case hasUppercasedLetters
-        
-        func fulfills(string: String) -> Bool {
-            switch self {
-//            case .isNotEmpty:
-//                return !string.isEmpty
-            case .minCharacters(min: let min):
-                return string.count > min
-            case .hasSymbols:
-                return string.hasSpecialCharacters()
-            case .hasUppercasedLetters:
-                return string.hasUppercasedCharacters()
-            }
-        }
-        
-        func message(fieldName: String) -> String {
-            switch self {
-//            case .isNotEmpty:
-//                return "\(fieldName) must not be empty"
-            case .minCharacters(min: let min):
-                return "\(fieldName) must be longer than \(min) characters"
-            case .hasSymbols:
-                return "\(fieldName) must have a symbol"
-            case .hasUppercasedLetters:
-                return "\(fieldName) must have an uppercase letter"
-            }
-        }
-    }
-    
-    struct Validation: Identifiable {
-        var id: Int
-        var field: Field
-        var validationType: ValidationType
-        var state: ValidationState
-        
-        init(string: String, id: Int, field: Field, validationType: ValidationType) {
-            self.id = id
-            self.field = field
-            self.validationType = validationType
-            self.state = validationType.fulfills(string: string) ? .success : .failure
-        }
-    }
-}
+//                                              validationType: .hasSymbols))
+//
+//                validations.append(Validation(string: password,
+//                                              id: 3,
+//                                              field: .password,
+//                                              validationType: .hasUppercasedLetters))
+//                return validations
+//            }
+//            .eraseToAnyPublisher()
+//    }
+//
+//
+//    enum Field: String {
+//        case username
+//        case password
+//        case email
+//        case name
+//    }
+//
+//    enum ValidationState {
+//        case success
+//        case failure
+//    }
+//
+//
+//    enum ValidationType {
+//        case hasSymbols
+//        case hasUppercasedLetters
+//
+//        func fulfills(string: String) -> Bool {
+//            switch self {
+//            case .hasSymbols:
+//                return string.hasSpecialCharacters()
+//            case .hasUppercasedLetters:
+//                return string.hasUppercasedCharacters()
+//            }
+//        }
+//
+//        func message(fieldName: String) -> String {
+//            switch self {
+//            case .hasSymbols:
+//                return "\(fieldName) must contain a symbol"
+//            case .hasUppercasedLetters:
+//                return "\(fieldName) must contain an uppercase letter"
+//            }
+//        }
+//    }
+//
+//    struct Validation: Identifiable {
+//        var id: Int
+//        var field: Field
+//        var validationType: ValidationType
+//        var state: ValidationState
+//
+//        init(string: String, id: Int, field: Field, validationType: ValidationType) {
+//            self.id = id
+//            self.field = field
+//            self.validationType = validationType
+//            self.state = validationType.fulfills(string: string) ? .success : .failure
+//        }
+//    }
+//}

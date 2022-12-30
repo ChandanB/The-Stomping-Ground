@@ -18,9 +18,11 @@ struct SelectProfileImageView: View {
         case .loading:
             ProgressView()
         case .empty:
-            Image(systemName: "person.fill")
+            Image(uiImage: UIImage(named: "sg-logo") ?? UIImage())
+                .resizable()
                 .font(.system(size: 40))
                 .foregroundColor(.white)
+                .scaledToFill()
         case .failure:
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 40))
@@ -53,19 +55,20 @@ struct EditableCircularProfileImage: View {
     @ObservedObject var viewModel: UserModel
     
     var body: some View {
-        CircularProfileImage(imageState: viewModel.imageState)
-            .overlay(RoundedRectangle(cornerRadius: 72).stroke(Color.black, lineWidth: 2))
-            .overlay(alignment: .bottomTrailing) {
-                PhotosPicker(selection: $viewModel.imageSelection,
-                             matching: .images,
-                             photoLibrary: .shared()) {
+        PhotosPicker(selection: $viewModel.imageSelection,
+                     matching: .images,
+                     photoLibrary: .shared()) {
+            CircularProfileImage(imageState: viewModel.imageState)
+                .overlay(RoundedRectangle(cornerRadius: 72).stroke(Color.black, lineWidth: 2))
+                .overlay(alignment: .bottomTrailing) {
                     Image(systemName: "pencil.circle.fill")
                         .symbolRenderingMode(.multicolor)
                         .font(.system(size: 32))
                         .foregroundColor(.accentColor)
                 }
-                .buttonStyle(.borderless)
-            }
+        }
+        .buttonStyle(.borderless)
+        
     }
 }
 

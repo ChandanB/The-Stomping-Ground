@@ -33,6 +33,7 @@
 		114C8E00294F6A5300028512 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 114C8DFF294F6A5300028512 /* SDWebImageSwiftUI */; };
 		114C8E02294F7E1300028512 /* CreateNewMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */; };
 		114C8E04294F7E4D00028512 /* CreateNewMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */; };
+		11624581295EAA8B00C28664 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624580295EAA8B00C28664 /* NotificationsView.swift */; };
 		118AE36B294D818D00331D6C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE36A294D818D00331D6C /* Extensions.swift */; };
 		118AE36D294D92A900331D6C /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE36C294D92A900331D6C /* FirebaseManager.swift */; };
 		118AE373294D9BFD00331D6C /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE372294D9BFD00331D6C /* UserModel.swift */; };
@@ -89,6 +90,7 @@
 		114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruddyChatsViewModel.swift; sourceTree = "<group>"; };
 		114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageViewModel.swift; sourceTree = "<group>"; };
 		114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageView.swift; sourceTree = "<group>"; };
+		11624580295EAA8B00C28664 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		118AE36A294D818D00331D6C /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		118AE36C294D92A900331D6C /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		118AE372294D9BFD00331D6C /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModel.swift; sourceTree = "<group>"; };
@@ -271,6 +273,7 @@
 				114BC133295D56ED007AF5D8 /* HomeView.swift */,
 				114BC138295D9108007AF5D8 /* AddPostView.swift */,
 				114BC13A295D97E4007AF5D8 /* SearchView.swift */,
+				11624580295EAA8B00C28664 /* NotificationsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -453,6 +456,7 @@
 				118AE37A294E95F800331D6C /* TruddyChatsView.swift in Sources */,
 				11E236A229502BB8000ED3B1 /* MessageView.swift in Sources */,
 				113D7A6C294D77DD0032A457 /* LoginView.swift in Sources */,
+				11624581295EAA8B00C28664 /* NotificationsView.swift in Sources */,
 				11E236A6295036AD000ED3B1 /* PostModel.swift in Sources */,
 				114BC134295D56ED007AF5D8 /* HomeView.swift in Sources */,
 				113D7A6E294D77DF0032A457 /* RegisterAccountView.swift in Sources */,
