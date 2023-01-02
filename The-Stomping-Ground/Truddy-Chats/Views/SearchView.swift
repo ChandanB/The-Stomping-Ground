@@ -6,76 +6,158 @@
 //
 
 import SwiftUI
+import SDWebImageSwiftUI
+import Firebase
+import FirebaseFirestoreSwift
 
-struct SearchNavigationBar: View {
-  @Binding var searchText: String
-  var onCommit: () -> Void
-  
-  var body: some View {
-    HStack {
-      SearchBar(text: $searchText, onCommit: onCommit)
-    }
-  }
-    
-    struct SearchBar: View {
-      @Binding var text: String
-      var onCommit: () -> Void
-      
-      var body: some View {
-          HStack {
-            TextField("Search", text: $text, onCommit: onCommit)
-              .foregroundColor(.black)
-            Button(action: self.onCommit) {
-              Image(systemName: "magnifyingglass")
-            }
-            .foregroundColor(.gray)
-          }
-          .padding(EdgeInsets(top: 8, leading: 6, bottom: 8, trailing: 6))
-          .background(Color(.systemGray6))
-          .cornerRadius(10.0)
-          .padding(16)
-      }
-    }
-
-}
 
 struct SearchView: View {
-  @State private var searchText = ""
-  @State private var searchResults = [Post]()
+    @ObservedObject private var searchViewModel = SearchViewModel()
+    @State private var searchText = ""
+    @State private var searchResults = [Post]()
     
-    let posts: [Post] = [
-        Post(id: "post1", createdAt: 123456, numLikes: 10, postImage: "image1", postDescription: "Description 1", fromNow: "From now 1", hasLiked: true, postComments: [], postLikes: [], user: User(id: "user1", uid: "uid1", name: "Name 1", username: "username1", email: "email1", profileImageUrl: "profile1", isFollowing: true, isEditable: true, bio: "Bio 1", following: [], followers: [], posts: []), caption: "Caption 1"),
-        Post(id: "post2", createdAt: 123457, numLikes: 20, postImage: "image2", postDescription: "Description 2", fromNow: "From now 2", hasLiked: false, postComments: [], postLikes: [], user: User(id: "user2", uid: "uid2", name: "Name 2", username: "username2", email: "email2", profileImageUrl: "profile2", isFollowing: false, isEditable: false, bio: "Bio 2", following: [], followers: [], posts: []), caption: "Caption 2")
-    ]
-  
-  var body: some View {
-    VStack {
-      SearchNavigationBar(searchText: $searchText, onCommit: search)
-      
-      List {
-        ForEach(searchResults) { post in
-          PostCell(post: post)
-        }
-      }
+    var body: some View {
+        VStack {
+            SearchNavigationBar(searchText: $searchText)
+            if searchViewModel.isLoading {
+                Text("Loading posts...")
+                    .bold()
+            } else {
+                ScrollView {
+                    ForEach(searchViewModel.posts.filter({ post in
+                        searchText.isEmpty || post.caption.contains(searchText)
+                    })) { post in
+                        PostCell(post: post)
+                            .cornerRadius(6)
+                            .padding(6)
+                    }
+                    .cornerRadius(20)
+                }
+            }
+        }.background(.gray)
     }
-  }
-  
-  func search() {
-    searchResults = posts.filter { post in
-        post.caption.contains(self.searchText)
-    }
-  }
 }
 
 struct PostCell: View {
-  let post: Post
-  
-  var body: some View {
-    VStack(alignment: .leading) {
-      // Display post content
+    let post: Post
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading) {
+                    HStack {
+                        // User profile image
+                        WebImage(url: URL(string: post.user.profileImageUrl))
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 40, height: 40)
+                            .clipShape(Circle())
+                            .overlay(RoundedRectangle(cornerRadius: 44)
+                                .stroke(Color(.label), lineWidth: 1)
+                            )
+                            .shadow(radius: 3)
+                        
+                        // User name and username
+                        Text(post.user.name)
+                            .font(.headline)
+                        
+                        Text("@" + post.user.username)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        // Post time
+                        Text(post.timeAgo)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    // Post image
+                    WebImage(url: URL(string: post.postImage ?? ""))
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .scaledToFit()
+                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                    
+                    HStack {
+                        HStack {
+                            // Like button
+                            Button(action: {
+                                // Like action
+                            }) {
+                                Image(systemName: "heart")
+                                    .foregroundColor(post.hasLiked ?? false ? .red : .black)
+                            }
+                            // Number of likes
+                            Text("\(post.numLikes) likes")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Spacer()
+                        
+                        // Comment button
+                        Button(action: {
+                            // Comment action
+                        }) {
+                            Image(systemName: "bubble.right")
+                                .foregroundColor(.black)
+                        }
+                        
+                        Spacer()
+                        
+                        // Share button
+                        Button(action: {
+                            // Share action
+                        }) {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundColor(.black)
+                        }
+                    }
+                    .padding(.top)
+                    
+                    // Post caption
+                    Text(post.caption)
+                        .font(.body)
+                        .padding(.top)
+                }
+                .padding(.leading, 4)
+                
+            }
+            .frame(height: 300)
+            .padding(10)
+            .background(.white)
+        }
     }
-  }
 }
+
+struct SearchNavigationBar: View {
+    @Binding var searchText: String
+    
+    var body: some View {
+        HStack {
+            SearchBar(text: $searchText)
+        }
+    }
+    
+    struct SearchBar: View {
+        @Binding var text: String
+        
+        var body: some View {
+            HStack {
+                TextField("Search", text: $text)
+                    .foregroundColor(.black)
+                Image(systemName: "magnifyingglass")
+                .foregroundColor(.gray)
+            }
+            .padding(EdgeInsets(top: 8, leading: 6, bottom: 8, trailing: 6))
+            .background(Color(.systemGray6))
+            .cornerRadius(10.0)
+            .padding(16)
+        }
+    }
+    
+}
+
 
 struct SearchView_Previews: PreviewProvider {
     static var previews: some View {
@@ -83,4 +165,54 @@ struct SearchView_Previews: PreviewProvider {
     }
 }
 
+class SearchViewModel: ObservableObject {
+    @Published var errorMessage = ""
+    @Published var posts = [Post]()
+    @Published var isLoading = false
 
+    private var firestoreListener: ListenerRegistration?
+
+    init() {
+        fetchPosts()
+    }
+
+    func fetchPosts() {
+        isLoading = true
+
+        firestoreListener?.remove()
+        self.posts.removeAll()
+
+        firestoreListener = FirebaseManager.shared.firestore
+            .collection(FirebaseConstants.posts)
+            .order(by: FirebaseConstants.timestamp, descending: true)
+            .addSnapshotListener { querySnapshot, error in
+                if let error = error {
+                    self.errorMessage = "Failed to listen for posts: \(error)"
+                    print(error)
+                    return
+                }
+
+                querySnapshot?.documentChanges.forEach({ change in
+                    let docId = change.document.documentID
+
+                    if let index = self.posts.firstIndex(where: { post in
+                        return post.id == docId
+                    }) {
+                        self.posts.remove(at: index)
+                    }
+
+                    do {
+                        let post = try change.document.data(as: Post.self)
+                        self.posts.insert(post, at: 0)
+                    } catch {
+                        print(error)
+                    }
+                })
+                self.isLoading = false
+            }
+    }
+
+    deinit {
+        firestoreListener?.remove()
+    }
+}

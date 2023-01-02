@@ -34,6 +34,9 @@
 		114C8E02294F7E1300028512 /* CreateNewMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */; };
 		114C8E04294F7E4D00028512 /* CreateNewMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */; };
 		11624581295EAA8B00C28664 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624580295EAA8B00C28664 /* NotificationsView.swift */; };
+		11624583295FC50E00C28664 /* MakerspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624582295FC50E00C28664 /* MakerspaceView.swift */; };
+		11624585295FD2FA00C28664 /* StoryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624584295FD2FA00C28664 /* StoryModel.swift */; };
+		11624587295FD84800C28664 /* UserProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624586295FD84800C28664 /* UserProfileView.swift */; };
 		118AE36B294D818D00331D6C /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE36A294D818D00331D6C /* Extensions.swift */; };
 		118AE36D294D92A900331D6C /* FirebaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE36C294D92A900331D6C /* FirebaseManager.swift */; };
 		118AE373294D9BFD00331D6C /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE372294D9BFD00331D6C /* UserModel.swift */; };
@@ -91,6 +94,9 @@
 		114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageViewModel.swift; sourceTree = "<group>"; };
 		114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageView.swift; sourceTree = "<group>"; };
 		11624580295EAA8B00C28664 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
+		11624582295FC50E00C28664 /* MakerspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakerspaceView.swift; sourceTree = "<group>"; };
+		11624584295FD2FA00C28664 /* StoryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryModel.swift; sourceTree = "<group>"; };
+		11624586295FD84800C28664 /* UserProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileView.swift; sourceTree = "<group>"; };
 		118AE36A294D818D00331D6C /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		118AE36C294D92A900331D6C /* FirebaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseManager.swift; sourceTree = "<group>"; };
 		118AE372294D9BFD00331D6C /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModel.swift; sourceTree = "<group>"; };
@@ -245,9 +251,12 @@
 		11E2369929502204000ED3B1 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				11E2369A29502265000ED3B1 /* RecentMessage.swift */,
+				11E2369C295022C9000ED3B1 /* ChatMessage.swift */,
 				118AE372294D9BFD00331D6C /* UserModel.swift */,
 				11E236A5295036AD000ED3B1 /* PostModel.swift */,
 				11E236A72950374F000ED3B1 /* CommentModel.swift */,
+				11624584295FD2FA00C28664 /* StoryModel.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -274,6 +283,8 @@
 				114BC138295D9108007AF5D8 /* AddPostView.swift */,
 				114BC13A295D97E4007AF5D8 /* SearchView.swift */,
 				11624580295EAA8B00C28664 /* NotificationsView.swift */,
+				11624582295FC50E00C28664 /* MakerspaceView.swift */,
+				11624586295FD84800C28664 /* UserProfileView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -281,8 +292,6 @@
 		11E236A429502BFE000ED3B1 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				11E2369A29502265000ED3B1 /* RecentMessage.swift */,
-				11E2369C295022C9000ED3B1 /* ChatMessage.swift */,
 				114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */,
 				11E2369729501863000ED3B1 /* ChatLogViewModel.swift */,
 				114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */,
@@ -442,9 +451,12 @@
 			files = (
 				11E23696294FC8AA000ED3B1 /* ChatLogView.swift in Sources */,
 				11E2369D295022C9000ED3B1 /* ChatMessage.swift in Sources */,
+				11624585295FD2FA00C28664 /* StoryModel.swift in Sources */,
 				11E236A029502472000ED3B1 /* FirebaseConstants.swift in Sources */,
 				114BC137295D5A98007AF5D8 /* TweetRowView.swift in Sources */,
+				11624583295FC50E00C28664 /* MakerspaceView.swift in Sources */,
 				114BC13B295D97E4007AF5D8 /* SearchView.swift in Sources */,
+				11624587295FD84800C28664 /* UserProfileView.swift in Sources */,
 				114C8DFD294F67CD00028512 /* TruddyChatsViewModel.swift in Sources */,
 				11E2369B29502265000ED3B1 /* RecentMessage.swift in Sources */,
 				114C8E02294F7E1300028512 /* CreateNewMessageViewModel.swift in Sources */,

@@ -304,29 +304,29 @@ class FirebaseManager: NSObject {
     //    }
     
     // MARK: Post services provider
-    /// This function save our datas to firebase cloud storage
+    /// This function saves our data to firebase cloud storage
     /// The accuracy of the sent data must be checked before the service and the user must be informed.
-    func postWithCollectionReferance(_ data: [String: Any]? = [:],
-                                     referance: String, serviceType: ServiceType,
+    func postWithCollectionReference(_ data: [String: Any]? = [:],
+                                     reference: String, serviceType: ServiceType,
                                      result: @escaping(Result<Any?, FirebaseServiceResult>) -> Void) {
-        let collectionReferance = self.firestore.collection(referance)
+        let collectionreference = self.firestore.collection(reference)
         
         DispatchQueue.main.async {
             switch serviceType {
             case .delete(let documentId):
-                collectionReferance.document(documentId).delete { err in
+                collectionreference.document(documentId).delete { err in
                     guard err == nil else { return result(.failure(.deleteError))}
                     return result(.success("LOCAL_DELETE_SUCCESSFULLY"))
                 }
                 
             case .update(let documentId):
-                collectionReferance.document(documentId).updateData(data!) { err in
+                collectionreference.document(documentId).updateData(data!) { err in
                     guard err == nil else { return result(.failure(.updateError))}
                     return result(.success("LOCAL_UPDATE_SUCCESSFULLY"))
                 }
                 
             case .save(let documentId):
-                collectionReferance.document(documentId).setData(data!) { err in
+                collectionreference.document(documentId).setData(data!) { err in
                     guard err == nil else { return result(.failure(.saveError))}
                     return result(.success("LOCAL_SAVE_SUCCESSFULLY"))
                 }
@@ -336,11 +336,11 @@ class FirebaseManager: NSObject {
     
     // MARK: Get services provider
     /// This function read our datas to firebase cloud storage
-    func getWithCollectionReferance(referance: String, documentId: String, result: @escaping(Result<Data, FirebaseServiceResult>) -> Void) {
-        let collectionReferance = self.firestore.collection(referance).document(documentId)
+    func getWithCollectionReference(reference: String, documentId: String, result: @escaping(Result<Data, FirebaseServiceResult>) -> Void) {
+        let collectionreference = self.firestore.collection(reference).document(documentId)
         
         DispatchQueue.main.async {
-            collectionReferance.getDocument { snapshot, err in
+            collectionreference.getDocument { snapshot, err in
                 guard err == nil else { return result(.failure(.documentNotFound))}
                 if let snapshot = snapshot?.data() {
                     let data = try? JSONSerialization.data(withJSONObject: snapshot, options: .prettyPrinted)

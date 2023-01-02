@@ -6,28 +6,35 @@
 //
 
 import SwiftUI
+import Firebase
+import PhotosUI
 
 struct AddPostView: View {
-    @State private var image: Image?
+    
+    @State private var showAlert: Bool = false
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String = ""
+    
     @State private var imageURL: URL?
-    @State private var postDescription: String = ""
+    @State private var caption: String = ""
+    @State private var errorMessage: String = ""
+    
+    @ObservedObject private var addPostViewModel = AddPostViewModel()
     
     @Environment(\.dismiss) private var dismiss
-
     
     var body: some View {
         VStack {
             CustomNavigationBar(leadingButton: {
-                AnyView(Text(""))
-//                AnyView(Button(action: {
-//                    dismiss()
-//                }) {
-//                    Image(systemName: "xmark")
-//                        .font(.system(size: 25))
-//                })
+                AnyView(Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 25))
+                })
             }, trailingButton: {
                 AnyView(Button(action: {
-                    // Create the post
+                    self.createPost(image: addPostViewModel.postImage ?? UIImage(), caption: caption)
                 }) {
                     Text("Post")
                         .fontWeight(.bold)
@@ -39,42 +46,64 @@ struct AddPostView: View {
                 })
             })
             
+            PhotosPicker(selection: $addPostViewModel.imageSelection,
+                         matching: .images,
+                         photoLibrary: .shared()) {
+                PostImageView(imageState: addPostViewModel.imageState)
+            } .buttonStyle(.borderless)
+            
             Form {
                 Section(header: Text("What's on your mind?")) {
-                    TextEditor(text: $postDescription)
-                        .frame(minHeight: 100)
-                        .padding(.vertical)
-                        .font(.system(size: 14))
-                        .foregroundColor(.black)
-                        .background(Color.white)
+                    TextEditor(text: $caption)
+                                        .frame(minHeight: 100)
+                                        .padding(.vertical)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.black)
+                                        .background(Color.white)
+                                }
+            }
+        }
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text(self.alertTitle), message: Text(self.alertMessage), dismissButton: .default(Text("Ok")))
+        }
+    }
+    
+    func createPost(image: UIImage, caption: String) {
+        guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
+
+        let postImageRef = FirebaseConstants.storagePostImagesRef.child(NSUUID().uuidString)
+        
+        postImageRef.putData(imageData) { metadata, err in
+            if let err = err {
+                print("Failed to upload profile image:", err)
+                return
+            }
+            postImageRef.downloadURL { url, err in
+                if let err = err {
+                    print("Failed to obtain download url for profile image:", err)
+                    return
                 }
+                guard let url = url?.absoluteString else { return }
+                // Create a new Post object using the provided parameters
+                let newPost = Post(id: nil, numLikes: 0, postImage: url, timestamp: Date(), hasLiked: false, postComments: [], user: FirebaseManager.shared.currentUser!, caption: caption)
                 
-                Section(header: Text("Add a Photo")) {
-                    if image != nil {
-                        image?
-                            .resizable()
-                            .scaledToFit()
-                    } else {
-                        Button(action: {
-                            // Select image from photo library
-                        }) {
-                            Text("Select a Photo")
-                        }
-                    }
-                }
+                // Generate a unique ID for the new post
+                let postId = UUID().uuidString
                 
-                Section {
-                    Button(action: {
-                        // Create the post
-                    }) {
-                        Text("Post")
-                    }
+                // Add the new post to the Firestore database
+                do {
+                    try FirebaseManager.shared.firestore.collection("posts").document(postId).setData(from: newPost)
+                    print("Successfully created new post with ID: \(postId)")
+                    self.showAlert.toggle()
+                    self.alertTitle = "Success"
+                    self.alertMessage = "Your post was successfully created!"
+                } catch {
+                    self.errorMessage = "Failed to create new post: \(error)"
                 }
             }
-            .navigationBarTitle("Add a Post", displayMode: .inline)
         }
-        
     }
+    
     
     struct CustomNavigationBar: View {
         var leadingButton: () -> AnyView
@@ -94,6 +123,121 @@ struct AddPostView: View {
 }
 struct AddPostView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView()
+        AddPostView()
+    }
+}
+
+class AddPostViewModel: ObservableObject {
+    @Published var errorMessage = ""
+    @Published var caption = ""
+    @Published var postImage: UIImage?
+    @Published var showImagePicker = false
+    
+    // MARK: - Profile Image
+    enum ImageState {
+        case empty
+        case loading(Progress)
+        case success(UIImage)
+        case failure(Error)
+    }
+    
+    enum TransferError: Error {
+        case importFailed
+    }
+    
+    struct PostImage: Transferable {
+        let image: UIImage
+        static var transferRepresentation: some TransferRepresentation {
+            DataRepresentation(importedContentType: .image) { data in
+                guard let uiImage = UIImage(data: data) else {
+                    throw TransferError.importFailed
+                }
+                return PostImage(image: uiImage)
+            }
+        }
+    }
+    
+    @Published private(set) var imageState: ImageState = .empty
+    
+    @Published var imageSelection: PhotosPickerItem? = nil {
+        didSet {
+            if let imageSelection {
+                let progress = loadTransferable(from: imageSelection)
+                imageState = .loading(progress)
+            } else {
+                imageState = .empty
+            }
+        }
+    }
+    
+    func loadDataRepresentation(for imageSelection: PhotosPickerItem, completion: @escaping (Data?, Error?) -> ()) {
+        imageSelection.loadTransferable(type: Data.self) { result in
+            switch result {
+            case .success(let data?):
+                completion(data, nil)
+            case .success(nil):
+                completion(nil, nil)
+            case .failure(let error):
+                completion(nil, error)
+            }
+        }
+    }
+    
+    // MARK: - Private Methods
+    
+    private func loadTransferable(from imageSelection: PhotosPickerItem) -> Progress {
+        return imageSelection.loadTransferable(type: PostImage.self) { result in
+            DispatchQueue.main.async {
+                guard imageSelection == self.imageSelection else {
+                    print("Failed to get the selected item.")
+                    return
+                }
+                switch result {
+                case .success(let postImage?):
+                    self.imageState = .success(postImage.image)
+                    self.postImage = postImage.image
+                case .success(nil):
+                    self.imageState = .empty
+                case .failure(let error):
+                    self.imageState = .failure(error)
+                }
+            }
+        }
+    }
+}
+
+struct PostImageView: View {
+    let imageState: AddPostViewModel.ImageState
+    
+    var body: some View {
+        SelectPostImageView(imageState: imageState)
+            .scaledToFill()
+            .frame(width: 300, height: 300)
+    }
+}
+
+struct SelectPostImageView: View {
+    let imageState: AddPostViewModel.ImageState
+    
+    var body: some View {
+        switch imageState {
+        case .success(let image):
+            Image(uiImage: image).resizable()
+        case .loading:
+            ProgressView()
+        case .empty:
+            ZStack {
+                Rectangle()
+                    .foregroundColor(.gray)
+                    .frame(width: 300, height: 300)
+                Text("Select a Photo")
+                    .foregroundColor(.white)
+                    .font(.headline)
+            }
+        case .failure:
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.white)
+        }
     }
 }

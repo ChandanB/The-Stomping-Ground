@@ -22,6 +22,8 @@ struct FirebaseConstants {
     static let messages = "messages"
     static let users = "users"
     static let recentMessages = "recent_messages"
+    static let posts = "posts"
+    static let createdAt = "createdAt"
     
     // MARK: - Root References
     static let databaseRef = FirebaseManager.shared.firestore

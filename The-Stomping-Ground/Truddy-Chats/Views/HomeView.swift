@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Firebase
+import FirebaseFirestoreSwift
 
 enum Tab {
     case home, search, post, notifications, messages
@@ -14,6 +16,7 @@ enum Tab {
 struct ContentView: View {
     
     @State private var selectedTab: Tab = .home
+    @State private var showAddPostView = false
     
     var body: some View {
         NavigationView {
@@ -35,13 +38,13 @@ struct ContentView: View {
                             Text("Search")
                         }.tag(Tab.search)
                     
-                    AddPostView()
+                    MakerspaceView()
                         .tabItem {
-                            Image(systemName: "plus")
-                            Text("Add Post")
+                            Image(systemName: "paintpalette")
+                            Text("Makerspace")
                         }.tag(Tab.post)
                     
-                    AddPostView()
+                    NotificationsView(notifications: [])
                         .tabItem {
                             Image(systemName: "bell")
                             Text("Notifications")
@@ -61,12 +64,13 @@ struct ContentView: View {
     struct HomeNavigationBar: View {
         var body: some View {
             HStack {
-                Button(action: {
-                    // Add post action
-                }) {
-                    Image(systemName: "plus.circle.fill")
+                
+                NavigationLink {
+                    TruddyChatsView().navigationBarBackButtonHidden()
+                } label: {
+                    Image(systemName: "message")
                         .foregroundColor(.black)
-                }
+                }.frame(width: 16, height: 16)
                 
                 Spacer()
                 
@@ -75,10 +79,13 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                NavigationLink(destination: TruddyChatsView().navigationBarBackButtonHidden()) {
-                    Image(systemName: "message")
-                      .foregroundColor(.black)
-                }
+                NavigationLink {
+                    AddPostView().navigationBarBackButtonHidden()
+                } label: {
+                    Image(systemName: "plus")
+                        .foregroundColor(.black)
+                }.frame(width: 16, height: 16)
+                
             }
             .padding()
         }
@@ -88,19 +95,14 @@ struct ContentView: View {
 }
 
 struct HomeView: View {
-    
-    let posts: [Post] = [
-        Post(id: "post1", createdAt: 123456, numLikes: 10, postImage: "image1", postDescription: "Description 1", fromNow: "From now 1", hasLiked: true, postComments: [], postLikes: [], user: User(id: "user1", uid: "uid1", name: "Name 1", username: "username1", email: "email1", profileImageUrl: "profile1", isFollowing: true, isEditable: true, bio: "Bio 1", following: [], followers: [], posts: []), caption: "Caption 1"),
-        Post(id: "post2", createdAt: 123457, numLikes: 20, postImage: "image2", postDescription: "Description 2", fromNow: "From now 2", hasLiked: false, postComments: [], postLikes: [], user: User(id: "user2", uid: "uid2", name: "Name 2", username: "username2", email: "email2", profileImageUrl: "profile2", isFollowing: false, isEditable: false, bio: "Bio 2", following: [], followers: [], posts: []), caption: "Caption 2")
-    ]
-    
+    @ObservedObject var homeViewModel = HomeViewModel()
     
     var body: some View {
         NavigationView {
             VStack {
                 ScrollView(.horizontal) {
                     HStack(spacing: 10) {
-                        ForEach(stories) { story in
+                        ForEach(homeViewModel.stories) { story in
                             StoryView(story: story)
                         }
                     }
@@ -110,41 +112,25 @@ struct HomeView: View {
                 
                 ScrollView {
                     VStack {
-                        ForEach(posts) { post in
-                            PostRow(post: post)
+                        ForEach(homeViewModel.posts) { post in
+                            PostView(post: post)
                         }
                         .padding()
                         .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 20))
                     }
-                    
                 }
             }
             .navigationBarHidden(true)
-            .navigationBarItems(leading: CameraButton(), trailing: NavigationLink(destination: TruddyChatsView()) {
-                MessagesButton()
-            })
         }
     }
     
-}
-
-
-let stories = [
-    Story(id: "1", user: User(id: "user1", uid: "uid1", name: "Name 1", username: "username1", email: "email1", profileImageUrl: "profile1", isFollowing: true, isEditable: true, bio: "Bio 1", following: [], followers: [], posts: [])),
-    Story(id: "2", user: User(id: "user2", uid: "uid2", name: "Name 2", username: "username2", email: "email2", profileImageUrl: "profile2", isFollowing: false, isEditable: false, bio: "Bio 2", following: [], followers: [], posts: []))
-]
-
-struct Story: Identifiable, Codable {
-    var id: String
-    var user: User
-    // ... other properties
 }
 
 struct StoryView: View {
     var story: Story
     
     var body: some View {
-        VStack {
+        LazyVStack {
             // Display the profile image for the user who shared the story
             Image(story.user.profileImageUrl)
                 .resizable()
@@ -158,11 +144,11 @@ struct StoryView: View {
     }
 }
 
-struct PostRow: View {
+struct PostView: View {
     var post: Post
     
     var body: some View {
-        HStack {
+        LazyHStack {
             // Display the profile image for the user who made the post
             Image(post.user.profileImageUrl)
                 .resizable()
@@ -185,24 +171,6 @@ struct PostRow: View {
     }
 }
 
-struct CameraButton: View {
-    var body: some View {
-        Button(action: {
-            // Navigate to the camera view when the button is tapped
-        }) {
-            Image(systemName: "camera")
-                .imageScale(.large)
-        }
-    }
-}
-
-struct MessagesButton: View {
-    var body: some View {
-        Image(systemName: "message")
-            .imageScale(.large)
-    }
-}
-
 struct OptionsButton: View {
     var body: some View {
         Button(action: {
@@ -219,3 +187,62 @@ struct HomeView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+class HomeViewModel: ObservableObject {
+    @Published var posts = [Post]()
+    @Published var stories = [Story]()
+
+    func fetchFollowing() {
+        FirebaseManager.shared.firestore.collection("users").document(FirebaseManager.shared.currentUser!.uid).collection("following").getDocuments { (querySnapshot, error) in
+            if let error = error {
+                print("Error fetching following users: \(error)")
+                return
+            }
+            guard let followingUserDocuments = querySnapshot?.documents else { return }
+            for userDocument in followingUserDocuments {
+                let followingUserId = userDocument.documentID
+                self.fetchPosts(userId: followingUserId)
+                self.fetchStories(userId: followingUserId)
+            }
+            
+        }
+    }
+    
+    func fetchPosts(userId: String) {
+        FirebaseConstants.usersRef.document(userId).collection("posts").getDocuments(completion: { (querySnapshot, error) in
+            if let error = error {
+                print("Error fetching posts for user with ID: \(userId) " + " Error: \(error)")
+                return
+            }
+            guard let postDocuments = querySnapshot?.documents else { return }
+            for document in postDocuments {
+                do {
+                    let post = try document.data(as: Post.self)
+                    self.posts.append(post)
+                } catch {
+                    print(error)
+                }
+            }
+        })
+    }
+    
+    func fetchStories(userId: String) {
+        FirebaseConstants.usersRef.document(userId).collection("stories").getDocuments(completion: { (querySnapshot, error) in
+            if let error = error {
+                print("Error fetching stories for user with ID: \(userId) " + " Error: \(error)")
+                return
+            }
+            guard let storyDocuments = querySnapshot?.documents else { return }
+            for document in storyDocuments {
+                do {
+                    let story = try document.data(as: Story.self)
+                    self.stories.append(story)
+                } catch {
+                    print(error)
+                }
+            }
+        })
+    }
+}
+
+

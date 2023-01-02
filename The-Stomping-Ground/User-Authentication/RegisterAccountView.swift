@@ -25,7 +25,7 @@ struct RegisterAccountView: View {
     
     @State private var isPasswordVisible: Bool = false
     
-    @StateObject private var userModel = UserModel()
+    @StateObject private var userModel = UserViewModel()
     
     @Environment(\.dismiss) private var dismiss
     
@@ -226,102 +226,3 @@ struct CreateAccountView_Previews: PreviewProvider {
         //        LoginView(didCompleteLoginProcess: {})
     }
 }
-
-//class FormViewModel: ObservableObject {
-//    @Published var password = ""
-//    @Published var confirmPassword = ""
-//    @Published var validations: [Validation] = []
-//    @Published var isValid: Bool = false
-//
-//    private var cancellableSet: Set<AnyCancellable> = []
-//
-//    init() {
-//        // Validations
-//        passwordPublisher
-//            .receive(on: RunLoop.main)
-//            .assign(to: \.validations, on: self)
-//            .store(in: &cancellableSet)
-//
-//        // isValid
-//        passwordPublisher
-//            .receive(on: RunLoop.main)
-//            .map { validations in
-//                return validations.filter { validation in
-//                    return ValidationState.failure == validation.state
-//                }.isEmpty
-//            }
-//            .assign(to: \.isValid, on: self)
-//            .store(in: &cancellableSet)
-//    }
-//
-//    private var passwordPublisher: AnyPublisher<[Validation], Never> {
-//        $password
-//            .removeDuplicates()
-//            .map { password in
-//
-//                var validations: [Validation] = []
-//                validations.append(Validation(string: password,
-//                                              id: 2,
-//                                              field: .password,
-//                                              validationType: .hasSymbols))
-//
-//                validations.append(Validation(string: password,
-//                                              id: 3,
-//                                              field: .password,
-//                                              validationType: .hasUppercasedLetters))
-//                return validations
-//            }
-//            .eraseToAnyPublisher()
-//    }
-//
-//
-//    enum Field: String {
-//        case username
-//        case password
-//        case email
-//        case name
-//    }
-//
-//    enum ValidationState {
-//        case success
-//        case failure
-//    }
-//
-//
-//    enum ValidationType {
-//        case hasSymbols
-//        case hasUppercasedLetters
-//
-//        func fulfills(string: String) -> Bool {
-//            switch self {
-//            case .hasSymbols:
-//                return string.hasSpecialCharacters()
-//            case .hasUppercasedLetters:
-//                return string.hasUppercasedCharacters()
-//            }
-//        }
-//
-//        func message(fieldName: String) -> String {
-//            switch self {
-//            case .hasSymbols:
-//                return "\(fieldName) must contain a symbol"
-//            case .hasUppercasedLetters:
-//                return "\(fieldName) must contain an uppercase letter"
-//            }
-//        }
-//    }
-//
-//    struct Validation: Identifiable {
-//        var id: Int
-//        var field: Field
-//        var validationType: ValidationType
-//        var state: ValidationState
-//
-//        init(string: String, id: Int, field: Field, validationType: ValidationType) {
-//            self.id = id
-//            self.field = field
-//            self.validationType = validationType
-//            self.state = validationType.fulfills(string: string) ? .success : .failure
-//        }
-//    }
-//}

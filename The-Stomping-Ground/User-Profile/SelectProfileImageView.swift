@@ -9,7 +9,7 @@ import SwiftUI
 import PhotosUI
 
 struct SelectProfileImageView: View {
-    let imageState: UserModel.ImageState
+    let imageState: UserViewModel.ImageState
     
     var body: some View {
         switch imageState {
@@ -32,7 +32,7 @@ struct SelectProfileImageView: View {
 }
 
 struct CircularProfileImage: View {
-    let imageState: UserModel.ImageState
+    let imageState: UserViewModel.ImageState
     
     var body: some View {
         SelectProfileImageView(imageState: imageState)
@@ -52,7 +52,7 @@ struct CircularProfileImage: View {
 }
 
 struct EditableCircularProfileImage: View {
-    @ObservedObject var viewModel: UserModel
+    @ObservedObject var viewModel: UserViewModel
     
     var body: some View {
         PhotosPicker(selection: $viewModel.imageSelection,

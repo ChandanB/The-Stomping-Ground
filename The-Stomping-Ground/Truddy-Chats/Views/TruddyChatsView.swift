@@ -8,13 +8,11 @@
 import SwiftUI
 import SDWebImageSwiftUI
 
-
 struct TruddyChatsView: View {
     
     @State var chatUser: User?
     
     @ObservedObject private var truddyChatsViewModel = TruddyChatsViewModel()
-    
     private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
     
     @Environment(\.dismiss) private var dismiss
@@ -28,9 +26,6 @@ struct TruddyChatsView: View {
                     ChatLogView(chatUser: self.chatUser)
                 }
             }
-            //            .fullScreenCover(isPresented: $shouldNavigateToChatLogView, content: {
-            //                ChatLogView(chatUser: self.chatUser)
-            //            })
             .overlay(newMessageButton, alignment: .bottom)
             .navigationBarHidden(true)
         }
@@ -53,8 +48,7 @@ struct TruddyChatsView: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 40, height: 40)
-                    .clipped()
-                    .cornerRadius(40)
+                    .clipShape(Circle())
                     .overlay(RoundedRectangle(cornerRadius: 44)
                         .stroke(Color(.label), lineWidth: 1)
                     )
@@ -191,29 +185,6 @@ struct TruddyChatsView: View {
                 self.chatLogViewModel.fetchMessages()
             }, chatUser: truddyChatsViewModel.chatUser)
         }
-        //        NavigationLink {
-        //            CreateNewMessageView(didSelectNewUser: { user in
-        //                self.shouldNavigateToChatLogView.toggle()
-        //                self.chatUser = user
-        //                self.chatLogViewModel.chatUser = user
-        //                self.chatLogViewModel.fetchMessages()
-        //            })
-        //            .navigationTitle(truddyChatsViewModel.chatUser?.name ?? "")
-        //        } label: {
-        //            HStack {
-        //                Spacer()
-        //                Text("+ New Message")
-        //                    .font(.system(size: 16, weight: .bold))
-        //                Spacer()
-        //            }
-        //            .foregroundColor(.white)
-        //            .padding(.vertical)
-        //                .background(Color.blue)
-        //                .cornerRadius(32)
-        //                .padding(.horizontal)
-        //                .shadow(radius: 15)
-        //        }.isDetailLink(false)
-        
     }
     
     

@@ -20,7 +20,7 @@ struct User: Codable, Identifiable {
 }
 
 @MainActor
-class UserModel: ObservableObject {
+class UserViewModel: ObservableObject {
     
     // MARK: - User Details
     

@@ -17,7 +17,7 @@ struct EditProfileView: View {
 }
 
 struct EditProfileForm: View {
-    @StateObject var viewModel = UserModel()
+    @StateObject var viewModel = UserViewModel()
     
     var body: some View {
         Form {
