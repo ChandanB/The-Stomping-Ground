@@ -19,7 +19,6 @@ struct RegisterAccountView: View {
     @State private var bio = ""
     @State private var image: UIImage?
 
-    
     @State private var creationStatusMessage = ""
     @State private var accountSuccessfullyCreated = false
     
@@ -29,20 +28,17 @@ struct RegisterAccountView: View {
     
     @Environment(\.dismiss) private var dismiss
     
-    let aboutMeLimit = 120
     let didCompleteRegisterProcess: () -> ()
     
     var isFormValid: Bool {
-        if name.isEmpty {
-            return false
-        } else if username.isEmpty || username.contains(" ") {
+        if name.isEmpty || username.isEmpty || username.contains(" "){
             return false
         } else {
             let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
             let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
             if !emailPred.evaluate(with: email) {
                 return false
-            } else if password.count < 6 {
+            } else if password.count < RegisterAccountConstants.passwordLength {
                 return false
             } else if password != confirmPassword {
                 return false
@@ -63,58 +59,50 @@ struct RegisterAccountView: View {
     
     private var createAccountForm: some View {
         GeometryReader { geometry in
-            VStack(spacing: 12) {
-                
-                FormTextFields
-                
-                HStack {
-                    
+            ScrollView {
+                VStack(spacing: 12) {
                     EditableCircularProfileImage(viewModel: userModel)
                         .padding(.bottom, 16)
-                    
-                    VStack {
-                        TextField("Bio", text: $bio, axis: .vertical)
-                            .padding(32)
-                            .lineLimit(3, reservesSpace: true)
-                            .background(.white)
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .cornerRadius(12)
-                            .onReceive(Just(bio)) { _ in limitText(aboutMeLimit) }
-                        Text("\(bio.count)" + " / " + "\(aboutMeLimit)")
+                    ValidationMessageView(message: validationMessage)
+                    FormFields
+                    Spacer()
+                    CreateAccountButton(title: "Create Account", backgroundColor: .blue, isDisabled: !isFormValid) {
+                        handleAuthentication()
                     }
+                    Spacer()
                 }
-                
-                Button {
-                    handleAuthentication()
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("Create Account")
-                            .foregroundColor(.white)
-                            .padding(.vertical, 10)
-                            .font(.system(size: 14, weight: .semibold))
-                        Spacer()
-                    }
-                    .disabled(!isFormValid)
-                    .background(isFormValid ? Color.blue : Color.gray)
-                }
-                
-                if accountSuccessfullyCreated {
-                    Text(self.creationStatusMessage)
-                        .foregroundColor(.green)
-                } else {
-                    Text(self.creationStatusMessage)
-                        .foregroundColor(.red)
-                }
-                
+                .padding()
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
             }
-            .padding()
-            .frame(width: geometry.size.width)
-            .frame(minHeight: geometry.size.height)
         }
     }
     
-    private var FormTextFields: some View {
+    struct CreateAccountButton: View {
+        let title: String
+        let backgroundColor: Color
+        let isDisabled: Bool
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                HStack {
+                    Spacer()
+                    Text(title)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 10)
+                        .font(.system(size: 14, weight: .semibold))
+                    Spacer()
+                }
+                .disabled(isDisabled ? true : false)
+                .background(isDisabled ? Color.gray : Color.blue)
+            }
+            .cornerRadius(12)
+        }
+    }
+
+    
+    private var FormFields: some View {
         Group {
             TextField("Name", text: $name)
                 .autocorrectionDisabled()
@@ -128,18 +116,10 @@ struct RegisterAccountView: View {
                 .autocapitalization(.none)
                 .autocorrectionDisabled()
             
-            if isPasswordVisible {
-                TextField("Password", text: $password)
-            } else {
-                SecureField("Password", text: $password)
-            }
+            PasswordTextField(label: "Password", isSecure: !isPasswordVisible, text: $password)
             
             HStack {
-                if isPasswordVisible {
-                    TextField("Confirm Password", text: $confirmPassword)
-                } else {
-                    SecureField("Confirm Password", text: $confirmPassword)
-                }
+                PasswordTextField(label: "Confirm Password", isSecure: !isPasswordVisible, text: $confirmPassword)
                 
                 Button(action: {
                     self.isPasswordVisible.toggle()
@@ -149,9 +129,65 @@ struct RegisterAccountView: View {
                         .frame(width: 20, height: 20, alignment: .center)
                 })
             }
+            
+            TextField("Bio", text: $bio, axis: .vertical)
+                .lineLimit(3, reservesSpace: true)
+                .background(.white)
+                .textFieldStyle(PlainTextFieldStyle())
+                .cornerRadius(12)
+                .onReceive(Just(bio)) { _ in limitText(RegisterAccountConstants.aboutMeLimit) }
+            Text("\(bio.count)" + " / " + "\(RegisterAccountConstants.aboutMeLimit)")
         }
         .padding()
     }
+    
+    struct PasswordTextField: View {
+        let label: String
+        let isSecure: Bool
+        let text: Binding<String>
+
+        var body: some View {
+            if isSecure {
+                SecureField(label, text: text)
+            } else {
+                TextField(label, text: text)
+                    .textInputAutocapitalization(.never)
+            }
+        }
+    }
+    
+    struct ValidationMessageView: View {
+        let message: String?
+        
+        var body: some View {
+            if let message = message {
+                Text(message)
+                    .foregroundColor(.black)
+                    .font(.caption)
+                    .padding(.top, 4)
+            } else {
+                Spacer()
+            }
+        }
+    }
+    
+    private var validationMessage: String? {
+          if name.isEmpty {
+              return "Enter your name"
+          } else if username.isEmpty || username.contains(" ") {
+              return "Enter a username"
+          } else if !isValidEmail(email) {
+              return "Enter your email"
+          } else if !isValidPassword(password) {
+              return "Password must contain 6 characters and a special character"
+          } else if password != confirmPassword {
+              return "Passwords must match"
+          } else if creationStatusMessage != "" {
+              return creationStatusMessage
+          } else {
+              return nil
+          }
+      }
     
     private var alreadyHaveAccountText: some View {
         Button {
@@ -171,43 +207,44 @@ struct RegisterAccountView: View {
         let isValid = checkIfFormIsValid(name: name, username: username, email: email, password: password)
         
         if isValid {
-            FirebaseManager.signUp(bio: bio, name: name, username: username, email: email, password: password, image: image) {
+            FirebaseManager.shared.signUp(bio: bio, name: name, username: username, email: email, password: password, image: image) {
                 self.accountSuccessfullyCreated = true
                 self.creationStatusMessage = "Successfully created user!"
                 self.didCompleteRegisterProcess()
             } onError: { errorMessage in
                 self.accountSuccessfullyCreated = false
                 self.creationStatusMessage = "Failed to create user: \(String(describing: errorMessage))"
-                return
             }
+        } else {
+            self.accountSuccessfullyCreated = false
         }
     }
     
-    private func checkIfFormIsValid(name: String, username: String, email: String, password: String) -> Bool {
-        var isValid = true
+    private func isValidPassword(_ password: String) -> Bool {
+        let passwordRegex = "^(?=.*[a-z])(?=.*[$@$#!%*?&])[A-Za-z\\d$@$#!%*?&]{6,}"
+        let passwordPred = NSPredicate(format:"SELF MATCHES %@", passwordRegex)
+        return passwordPred.evaluate(with: password)
+    }
+
+    private func isValidEmail(_ email: String) -> Bool {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
+    }
+
+    private func checkIfFormIsValid(name: String, username: String, email: String, password: String) -> Bool {
+        var isValid = true
         
         if name.isEmpty {
             isValid = false
-            self.accountSuccessfullyCreated = false
-            self.creationStatusMessage = "Tip: name cannot be empty"
         } else if username.isEmpty || username.contains(" ") {
             isValid = false
-            self.accountSuccessfullyCreated = false
-            self.creationStatusMessage = "Tip: username cannot contain spaces"
-        } else if !emailPred.evaluate(with: email) {
+        } else if !isValidEmail(email) {
             isValid = false
-            self.accountSuccessfullyCreated = false
-            self.creationStatusMessage = "Invalid email address"
-        } else if password.count < 6 || !password.hasSpecialCharacters() || !password.hasUppercasedCharacters() {
+        } else if !isValidPassword(password) {
             isValid = false
-            self.accountSuccessfullyCreated = false
-            self.creationStatusMessage = "Password must contain 6 characters, a special character, and an uppercase letter"
         } else if password != confirmPassword {
             isValid = false
-            self.accountSuccessfullyCreated = false
-            self.creationStatusMessage = "The passwords do not match"
         }
         
         return isValid

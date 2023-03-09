@@ -111,14 +111,15 @@ struct TruddyChatsView: View {
                     Button {
                         let uid = FirebaseManager.shared.auth.currentUser?.uid == recentMessage.fromId ? recentMessage.toId : recentMessage.fromId
                         
-                        self.chatUser = .init(id: uid, uid: uid, name: recentMessage.name, username: recentMessage.username, email: recentMessage.email, profileImageUrl: recentMessage.profileImageUrl)
+                        self.chatUser = .init(id: uid, uid: uid, name: recentMessage.name, username: recentMessage.username, email: recentMessage.email, profileImageUrl: recentMessage.profileImageURL
+                        )
                         
                         self.chatLogViewModel.chatUser = self.chatUser
                         self.chatLogViewModel.fetchMessages()
                         self.shouldNavigateToChatLogView.toggle()
                     } label: {
                         HStack(spacing: 16) {
-                            WebImage(url: URL(string: recentMessage.profileImageUrl))
+                            WebImage(url: URL(string: recentMessage.profileImageURL))
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 40, height: 40)

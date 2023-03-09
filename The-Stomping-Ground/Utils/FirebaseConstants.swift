@@ -8,7 +8,7 @@
 import Firebase
 import FirebaseStorage
 
-struct FirebaseConstants {
+struct FirestoreConstants {
     static let name = "name"
     static let username = "username"
     static let bio = "bio"
@@ -24,50 +24,46 @@ struct FirebaseConstants {
     static let recentMessages = "recent_messages"
     static let posts = "posts"
     static let createdAt = "createdAt"
-    
-    // MARK: - Root References
-    static let databaseRef = FirebaseManager.shared.firestore
-    static let storageRef = Storage.storage().reference()
     static let currentUser = Auth.auth().currentUser
-    
-    // MARK: - Storage References
-    static let storageProfileImagesRef = storageRef.child("profile_images")
-    static let storageMessageImagesRef = storageRef.child("message_images")
-    static let storageMessageVideoRef = storageRef.child("video_messages")
-    static let storagePostImagesRef = storageRef.child("post_images")
-    
-    // MARK: - Database References
-    static let usersRef = databaseRef.collection("users")
-
-    static let userFollowersRef = databaseRef.collection("user-followers")
-    static let userFollowingRef = databaseRef.collection("user-following")
-
-    static let userFeedRef = databaseRef.collection("user-feed")
-    static let userPostsRef = databaseRef.collection("user-posts")
-    static let userRepostsRef = databaseRef.collection("user-reposts")
-    static let userUpvotesRef = databaseRef.collection("user-votes")
-    static let userDownvotesRef = databaseRef.collection("user-downvotes")
-
-    static let postsRef = databaseRef.collection("posts")
-    static let postRepostsRef = databaseRef.collection("post-reposts")
-    static let postUpvotesRef = databaseRef.collection("post-votes")
-    static let postDownvotesRef = databaseRef.collection("post-donwvotes")
-
-    static let commentsRef = databaseRef.collection("comments")
-
-    static let notificationsRef = databaseRef.collection("notifications")
-
-    static let messagesRef = databaseRef.collection("messages")
-    static let userMessagesRef = databaseRef.collection("user-messages")
-    static let userMessageNotificationsRef = databaseRef.collection("user-message-notifications")
-
-    static let hashtagPostRef = databaseRef.collection("hashtag-post")
-    
-    // MARK: - Decoding Values
-    static let UPVOTE_INT_VALUE = 0
-    static let DOWNVOTE_INT_VALUE = 1
-    static let COMMENT_INT_VALUE = 2
-    static let FOLLOW_INT_VALUE = 3
-    static let COMMENT_MENTION_INT_VALUE = 4
-    static let POST_MENTION_INT_VALUE = 5
 }
+
+struct StorageConstants {
+    static let storageProfileImagesRef = Storage.storage().reference().child("profile_images")
+    static let storageMessageImagesRef = Storage.storage().reference().child("message_images")
+    static let storageMessageVideoRef = Storage.storage().reference().child("video_messages")
+    static let storagePostImagesRef = Storage.storage().reference().child("post_images")
+}
+
+struct FirestoreCollectionReferences {
+    static let fire = FirebaseManager.shared.firestore
+    static let users = fire.collection("users")
+    static let userFollowers = fire.collection("user-followers")
+    static let userFollowing = fire.collection("user-following")
+    static let userFeed = fire.collection("user-feed")
+    static let userPosts = fire.collection("user-posts")
+    static let userReposts = fire.collection("user-reposts")
+    static let userUpvotes = fire.collection("user-votes")
+    static let userDownvotes = fire.collection("user-downvotes")
+    static let posts = fire.collection("posts")
+    static let postReposts = fire.collection("post-reposts")
+    static let postUpvotes = fire.collection("post-votes")
+    static let postDownvotes = fire.collection("post-donwvotes")
+    static let comments = fire.collection("comments")
+    static let notifications = fire.collection("notifications")
+    static let chats = fire.collection("chats")
+    static let messages = fire.collection("messages")
+    static let userMessages = fire.collection("user-messages")
+    static let userMessageNotifications = fire.collection("user-message-notifications")
+    static let hashtagPost = fire.collection("hashtag-post")
+}
+
+struct FirestoreDecodingValues {
+    static let upvoteIntValue = 0
+    static let downvoteIntValue = 1
+    static let commentIntValue = 2
+    static let followIntValue = 3
+    static let commentMentionIntValue = 4
+    static let postMentionIntValue = 5
+}
+
+

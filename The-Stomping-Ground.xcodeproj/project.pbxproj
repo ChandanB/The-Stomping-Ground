@@ -43,6 +43,7 @@
 		118AE375294D9C5200331D6C /* SelectProfileImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE374294D9C5200331D6C /* SelectProfileImageView.swift */; };
 		118AE377294D9CB800331D6C /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE376294D9CB800331D6C /* EditProfileView.swift */; };
 		118AE37A294E95F800331D6C /* TruddyChatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE379294E95F800331D6C /* TruddyChatsView.swift */; };
+		11ACABA729B93ED200F8AF55 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11ACABA629B93ED200F8AF55 /* Constants.swift */; };
 		11DE0464294D7AEE00954E2E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 11DE0463294D7AEE00954E2E /* GoogleService-Info.plist */; };
 		11E23696294FC8AA000ED3B1 /* ChatLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E23695294FC8AA000ED3B1 /* ChatLogView.swift */; };
 		11E2369829501863000ED3B1 /* ChatLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E2369729501863000ED3B1 /* ChatLogViewModel.swift */; };
@@ -103,6 +104,7 @@
 		118AE374294D9C5200331D6C /* SelectProfileImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectProfileImageView.swift; sourceTree = "<group>"; };
 		118AE376294D9CB800331D6C /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		118AE379294E95F800331D6C /* TruddyChatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruddyChatsView.swift; sourceTree = "<group>"; };
+		11ACABA629B93ED200F8AF55 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		11DE0463294D7AEE00954E2E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "../../../../Downloads/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		11E23695294FC8AA000ED3B1 /* ChatLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogView.swift; sourceTree = "<group>"; };
 		11E2369729501863000ED3B1 /* ChatLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogViewModel.swift; sourceTree = "<group>"; };
@@ -267,6 +269,7 @@
 				118AE36A294D818D00331D6C /* Extensions.swift */,
 				118AE36C294D92A900331D6C /* FirebaseManager.swift */,
 				11E2369F29502472000ED3B1 /* FirebaseConstants.swift */,
+				11ACABA629B93ED200F8AF55 /* Constants.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -454,6 +457,7 @@
 				11624585295FD2FA00C28664 /* StoryModel.swift in Sources */,
 				11E236A029502472000ED3B1 /* FirebaseConstants.swift in Sources */,
 				114BC137295D5A98007AF5D8 /* TweetRowView.swift in Sources */,
+				11ACABA729B93ED200F8AF55 /* Constants.swift in Sources */,
 				11624583295FC50E00C28664 /* MakerspaceView.swift in Sources */,
 				114BC13B295D97E4007AF5D8 /* SearchView.swift in Sources */,
 				11624587295FD84800C28664 /* UserProfileView.swift in Sources */,

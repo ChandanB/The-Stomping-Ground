@@ -10,7 +10,6 @@ import Firebase
 import FirebaseFirestoreSwift
 
 class TruddyChatsViewModel: ObservableObject {
-    
     @Published var errorMessage = ""
     @Published var chatUser: User?
     @Published var isUserCurrentlyLoggedOut = false
@@ -23,7 +22,6 @@ class TruddyChatsViewModel: ObservableObject {
             self.isUserCurrentlyLoggedOut = FirebaseManager.shared.auth.currentUser?.uid == nil
         }
         fetchCurrentUser()
-        fetchRecentMessages()
     }
     
     func fetchCurrentUser() {
@@ -41,20 +39,21 @@ class TruddyChatsViewModel: ObservableObject {
             
             self.chatUser = try? snapshot?.data(as: User.self)
             FirebaseManager.shared.currentUser = self.chatUser
+            self.fetchRecentMessages()
         }
     }
     
     func fetchRecentMessages() {
-        guard let uid = FirebaseManager.shared.auth.currentUser?.uid else { return }
+        guard let uid = FirebaseManager.shared.currentUser?.uid else { return }
         
         firestoreListener?.remove()
         self.recentMessages.removeAll()
         
         firestoreListener = FirebaseManager.shared.firestore
-            .collection(FirebaseConstants.recentMessages)
+            .collection(FirestoreConstants.recentMessages)
             .document(uid)
-            .collection(FirebaseConstants.messages)
-            .order(by: FirebaseConstants.timestamp)
+            .collection(FirestoreConstants.messages)
+            .order(by: FirestoreConstants.timestamp)
             .addSnapshotListener { querySnapshot, error in
                 if let error = error {
                     self.errorMessage = "Failed to listen for recent messages: \(error)"

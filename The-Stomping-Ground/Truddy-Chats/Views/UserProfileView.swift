@@ -153,13 +153,13 @@ class UserProfileViewModel: ObservableObject {
     }
     
     func follow() {
-        FirebaseConstants.usersRef.document(currentUserId).updateData([
+        FirestoreCollectionReferences.users.document(currentUserId).updateData([
             "following": FieldValue.arrayUnion([userId])
         ])
     }
     
     func unfollow() {
-        FirebaseConstants.usersRef.document(currentUserId).updateData([
+        FirestoreCollectionReferences.users.document(currentUserId).updateData([
             "following": FieldValue.arrayRemove([userId])
         ])
     }

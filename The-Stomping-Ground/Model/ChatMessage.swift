@@ -21,3 +21,18 @@ struct MessageSubtitle {
     static let audio = "Audio message"
     static let empty = "No messages here yet."
 }
+
+struct Chat: Identifiable, Codable {
+    @DocumentID var id: String?
+    let name: String
+    let participants: [String]
+    let lastMessage: Message?
+    let createdAt: Date
+}
+
+struct Message: Identifiable, Codable {
+    @DocumentID var id: String?
+    let senderId: String
+    let messageText: String
+    let timestamp: Date
+}

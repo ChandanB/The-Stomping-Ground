@@ -19,9 +19,14 @@ struct LoginView: View {
     @State private var loginStatusMessage = ""
     @State private var sgLogo = UIImage(named: "sg-logo")
     @State private var systemImage = UIImage(systemName: "person")
-    
-    @State private var formIsNotValid = true
-
+        
+    var formIsValid: Bool {
+        if $email.wrappedValue.count >= 5 && $password.wrappedValue.count >= 6 {
+            return true
+        } else {
+            return false
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -36,56 +41,119 @@ struct LoginView: View {
     
     private var signInForm: some View {
         GeometryReader { geometry in
-            VStack(spacing: 16) {
-                Group {
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
-                    SecureField("Password", text: $password)
-                }
-                .padding(12)
-                .background(.white)
-                
-                if $email.wrappedValue.count > 5 && $password.wrappedValue.count > 5 {
-                    Button {
-                        handleLogin()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("Sign In")
-                                .foregroundColor(.white)
-                                .padding(.vertical, 10)
-                                .font(.system(size: 14, weight: .semibold))
-                            Spacer()
-                        }.background(.blue)
+            ScrollView {
+                VStack(spacing: 16) {
+                    Group {
+                        EmailFieldView(label: "Email", placeholder: "Email", keyboardType: .emailAddress, autocapitalization: .none, text: $email)
+                            .padding([.bottom])
+                        PasswordFieldView(label: "Password", placeholder: "Password", text: $password)
                     }
-                } else {
-                    Button {
+                    .padding(.leading)
+                    .background(.white)
+                    
+                    SignInButtonView(title: "Sign In", backgroundColor: .blue, disabled: !formIsValid) {
                         handleLogin()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("Sign In")
-                                .foregroundColor(.white)
-                                .padding(.vertical, 10)
-                                .font(.system(size: 14, weight: .semibold))
-                            Spacer()
-                        }.background(Color(.gray))
-                    }.disabled(formIsNotValid)
+                    }
+                                     
+                    if loginWasSuccessful {
+                        ValidationMessageView(message: self.loginStatusMessage, color: .green)
+                    } else {
+                        ValidationMessageView(message: self.loginStatusMessage, color: .red)
+                    }
                 }
-             
-                if loginWasSuccessful {
-                    Text(self.loginStatusMessage)
-                        .foregroundColor(.green)
-                } else {
-                    Text(self.loginStatusMessage)
-                        .foregroundColor(.red)
-                }
+                .padding()
+                .frame(width: geometry.size.width)
+                .frame(minHeight: geometry.size.height)
             }
-            .padding()
-            .frame(width: geometry.size.width)
-            .frame(minHeight: geometry.size.height)
+        }
+    }
+    
+    struct EmailFieldView: View {
+        let label: String
+        let placeholder: String
+        let keyboardType: UIKeyboardType
+        let autocapitalization: UITextAutocapitalizationType
+        let text: Binding<String>
+        
+        var body: some View {
+            VStack(alignment: .leading) {
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                
+                TextField(placeholder, text: text)
+                    .keyboardType(keyboardType)
+                    .autocapitalization(autocapitalization)
+                    .autocorrectionDisabled()
+                    .cornerRadius(8)
+            }
+        }
+    }
+    
+    struct PasswordFieldView: View {
+        let label: String
+        let placeholder: String
+        let text: Binding<String>
+        
+        @State private var isPasswordVisible: Bool = false
+        
+        var body: some View {
+            VStack(alignment: .leading) {
+                Text(label)
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                
+                HStack {
+                    if isPasswordVisible {
+                        TextField(placeholder, text: text)
+                            .autocapitalization(.none)
+                    } else {
+                        SecureField(placeholder, text: text)
+                    }
+                    
+                    Button(action: {
+                        self.isPasswordVisible.toggle()
+                    }, label: {
+                        Image(systemName: isPasswordVisible ? "eye" : "eye.slash")
+                            .foregroundColor(.gray)
+                            .frame(width: 20, height: 20, alignment: .center)
+                            .padding(.trailing)
+                    })
+                }
+                .padding(.bottom)
+                .cornerRadius(8)
+            }
+        }
+    }
+    
+    struct SignInButtonView: View {
+        let title: String
+        let backgroundColor: Color
+        let disabled: Bool
+        let action: () -> Void
+        
+        var body: some View {
+            Button(action: action) {
+                Text(title)
+                    .foregroundColor(.white)
+                    .padding(.vertical, 10)
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+                    .background(disabled ? Color.gray : backgroundColor)
+                    .cornerRadius(8)
+            }
+            .disabled(disabled)
+        }
+    }
+    
+    struct ValidationMessageView: View {
+        var message: String
+        var color: Color
+        
+        var body: some View {
+            Text(message)
+                .foregroundColor(color)
+                .padding(.top, 4)
         }
     }
     
@@ -99,30 +167,34 @@ struct LoginView: View {
             .isDetailLink(false)
     }
     
-    private func handleLogin() {
-        // Validate email
+    private func isValidEmail(_ email: String) -> Bool {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
-        let isValidEmail = emailPred.evaluate(with: email)
-        
-        // Validate password
-        let isValidPassword = password.count >= 6
+        return emailPred.evaluate(with: email)
+    }
+
+    private func isValidPassword(_ password: String) -> Bool {
+        return password.count >= 6
+    }
+    
+    private func handleLogin() {
+        let isValidEmail = isValidEmail(email)
+        let isValidPassword = isValidPassword(password)
         
         if isValidEmail && isValidPassword {
-          FirebaseManager.signIn(email: email, password: password) {
-              self.loginWasSuccessful = true
-              self.loginStatusMessage = "Successfully logged in!"
-              self.didCompleteLoginProcess()
-          } onError: { errorMessage in
-              self.loginWasSuccessful = false
-              self.loginStatusMessage = "Failed to login: \(String(describing: errorMessage))"
-              return
-          }
+            FirebaseManager.shared.signIn(email: email, password: password) {
+                self.loginWasSuccessful = true
+                self.loginStatusMessage = "Successfully logged in!"
+                self.didCompleteLoginProcess()
+            } onError: { errorMessage in
+                self.loginWasSuccessful = false
+                self.loginStatusMessage = "Failed to login: \(String(describing: errorMessage))"
+                return
+            }
         } else {
             self.loginWasSuccessful = false
             self.loginStatusMessage = "Invalid Email or Password"
         }
-        
     }
     
 }

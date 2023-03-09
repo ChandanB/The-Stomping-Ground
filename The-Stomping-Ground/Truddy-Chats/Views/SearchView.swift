@@ -183,8 +183,8 @@ class SearchViewModel: ObservableObject {
         self.posts.removeAll()
 
         firestoreListener = FirebaseManager.shared.firestore
-            .collection(FirebaseConstants.posts)
-            .order(by: FirebaseConstants.timestamp, descending: true)
+            .collection(FirestoreConstants.posts)
+            .order(by: FirestoreConstants.timestamp, descending: true)
             .addSnapshotListener { querySnapshot, error in
                 if let error = error {
                     self.errorMessage = "Failed to listen for posts: \(error)"

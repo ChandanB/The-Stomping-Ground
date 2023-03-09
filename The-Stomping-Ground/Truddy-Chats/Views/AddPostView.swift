@@ -71,7 +71,7 @@ struct AddPostView: View {
     func createPost(image: UIImage, caption: String) {
         guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
 
-        let postImageRef = FirebaseConstants.storagePostImagesRef.child(NSUUID().uuidString)
+        let postImageRef = StorageConstants.storagePostImagesRef.child(NSUUID().uuidString)
         
         postImageRef.putData(imageData) { metadata, err in
             if let err = err {

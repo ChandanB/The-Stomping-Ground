@@ -209,7 +209,7 @@ class HomeViewModel: ObservableObject {
     }
     
     func fetchPosts(userId: String) {
-        FirebaseConstants.usersRef.document(userId).collection("posts").getDocuments(completion: { (querySnapshot, error) in
+        FirestoreCollectionReferences.users.document(userId).collection("posts").getDocuments(completion: { (querySnapshot, error) in
             if let error = error {
                 print("Error fetching posts for user with ID: \(userId) " + " Error: \(error)")
                 return
@@ -227,7 +227,7 @@ class HomeViewModel: ObservableObject {
     }
     
     func fetchStories(userId: String) {
-        FirebaseConstants.usersRef.document(userId).collection("stories").getDocuments(completion: { (querySnapshot, error) in
+        FirestoreCollectionReferences.users.document(userId).collection("stories").getDocuments(completion: { (querySnapshot, error) in
             if let error = error {
                 print("Error fetching stories for user with ID: \(userId) " + " Error: \(error)")
                 return

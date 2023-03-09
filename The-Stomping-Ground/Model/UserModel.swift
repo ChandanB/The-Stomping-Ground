@@ -29,7 +29,6 @@ class UserViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var bio: String = ""
     @Published var profileImage: UIImage = (UIImage(named: "sg-logo") ?? UIImage())
-
     
     // MARK: - Profile Image
     enum ImageState {
@@ -89,5 +88,46 @@ class UserViewModel: ObservableObject {
             }
         }
     }
+    
+    var currentUser: User?
+    
+    private var firebaseManager = FirebaseManager.shared
+    
+    func updateProfile(completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let currentUser = currentUser else {
+            completion(.failure(ProfileError.userNotFound))
+            return
+        }
+        
+        let dispatchGroup = DispatchGroup()
+        var profileImageURL = currentUser.profileImageUrl
+        
+        dispatchGroup.enter()
+        FirebaseManager.uploadUserProfileImage(image: profileImage) { imageUrl in
+            profileImageURL = imageUrl
+            dispatchGroup.leave()
+        }
+        
+        dispatchGroup.notify(queue: .main) {
+            let user = User(id: currentUser.uid, uid: currentUser.uid, name: self.username, username: self.username, email: currentUser.email, profileImageUrl: profileImageURL)
+            
+            FirebaseManager.uploadUser(withUID: currentUser.uid, bio: self.bio, name: self.name, username: self.username, email: user.email) {
+                completion(.success(()))
+            }
+        }
+    }
+    
+    func fetchCurrentUser() {
+        firebaseManager.fetchCurrentUser { user in
+            self.bio = user.bio ?? ""
+            self.name = user.name
+            self.username = user.username
+            self.currentUser = user
+        }
+    }
 }
 
+
+enum ProfileError: Error {
+    case userNotFound
+}

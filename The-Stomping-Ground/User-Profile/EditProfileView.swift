@@ -9,15 +9,39 @@ import SwiftUI
 import PhotosUI
 
 struct EditProfileView: View {
+    
+    @ObservedObject private var viewModel = UserViewModel()
+    
     var body: some View {
-        NavigationView {
-            EditProfileForm()
+        NavigationStack {
+            VStack(spacing: 16) {
+                EditProfileForm(viewModel: viewModel)
+                
+                Button {
+                    self.viewModel.updateProfile { error in
+                        
+                    }
+                } label: {
+                    HStack {
+                        Spacer()
+                        Text("Save Changes")
+                            .foregroundColor(.white)
+                            .padding(.vertical, 10)
+                            .font(.system(size: 14, weight: .semibold))
+                        Spacer()
+                    }
+                    .background(Color.blue)
+                }
+            }
+            .padding()
+            .navigationTitle("Edit Profile")
         }
     }
 }
 
+
 struct EditProfileForm: View {
-    @StateObject var viewModel = UserViewModel()
+    @StateObject var viewModel: UserViewModel
     
     var body: some View {
         Form {
@@ -38,9 +62,9 @@ struct EditProfileForm: View {
                           prompt: Text("Username"))
             }
             Section {
-                TextField("About Me",
+                TextField("Bio",
                           text: $viewModel.bio,
-                          prompt: Text("About Me"))
+                          prompt: Text("Bio"))
             }
         }
         .navigationTitle("Account Profile")
