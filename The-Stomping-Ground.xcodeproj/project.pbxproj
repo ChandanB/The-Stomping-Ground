@@ -29,10 +29,7 @@
 		114BC137295D5A98007AF5D8 /* TweetRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114BC136295D5A98007AF5D8 /* TweetRowView.swift */; };
 		114BC139295D9108007AF5D8 /* AddPostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114BC138295D9108007AF5D8 /* AddPostView.swift */; };
 		114BC13B295D97E4007AF5D8 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114BC13A295D97E4007AF5D8 /* SearchView.swift */; };
-		114C8DFD294F67CD00028512 /* TruddyChatsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */; };
 		114C8E00294F6A5300028512 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 114C8DFF294F6A5300028512 /* SDWebImageSwiftUI */; };
-		114C8E02294F7E1300028512 /* CreateNewMessageViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */; };
-		114C8E04294F7E4D00028512 /* CreateNewMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */; };
 		11624581295EAA8B00C28664 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624580295EAA8B00C28664 /* NotificationsView.swift */; };
 		11624583295FC50E00C28664 /* MakerspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624582295FC50E00C28664 /* MakerspaceView.swift */; };
 		11624585295FD2FA00C28664 /* StoryModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11624584295FD2FA00C28664 /* StoryModel.swift */; };
@@ -42,18 +39,20 @@
 		118AE373294D9BFD00331D6C /* UserModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE372294D9BFD00331D6C /* UserModel.swift */; };
 		118AE375294D9C5200331D6C /* SelectProfileImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE374294D9C5200331D6C /* SelectProfileImageView.swift */; };
 		118AE377294D9CB800331D6C /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE376294D9CB800331D6C /* EditProfileView.swift */; };
-		118AE37A294E95F800331D6C /* TruddyChatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE379294E95F800331D6C /* TruddyChatsView.swift */; };
+		118AE37A294E95F800331D6C /* ChatListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118AE379294E95F800331D6C /* ChatListView.swift */; };
+		119AE46129BBA3CF00B96679 /* UserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119AE46029BBA3CF00B96679 /* UserView.swift */; };
+		119AE46329BBB52300B96679 /* CreateNewChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119AE46229BBB52300B96679 /* CreateNewChatView.swift */; };
 		11ACABA729B93ED200F8AF55 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11ACABA629B93ED200F8AF55 /* Constants.swift */; };
 		11DE0464294D7AEE00954E2E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 11DE0463294D7AEE00954E2E /* GoogleService-Info.plist */; };
-		11E23696294FC8AA000ED3B1 /* ChatLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E23695294FC8AA000ED3B1 /* ChatLogView.swift */; };
-		11E2369829501863000ED3B1 /* ChatLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E2369729501863000ED3B1 /* ChatLogViewModel.swift */; };
-		11E2369B29502265000ED3B1 /* RecentMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E2369A29502265000ED3B1 /* RecentMessage.swift */; };
-		11E2369D295022C9000ED3B1 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E2369C295022C9000ED3B1 /* ChatMessage.swift */; };
+		11E23696294FC8AA000ED3B1 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E23695294FC8AA000ED3B1 /* ChatView.swift */; };
+		11E2369D295022C9000ED3B1 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E2369C295022C9000ED3B1 /* ChatModel.swift */; };
 		11E236A029502472000ED3B1 /* FirebaseConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E2369F29502472000ED3B1 /* FirebaseConstants.swift */; };
-		11E236A229502BB8000ED3B1 /* MessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A129502BB8000ED3B1 /* MessageView.swift */; };
+		11E236A229502BB8000ED3B1 /* ChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A129502BB8000ED3B1 /* ChatMessageView.swift */; };
 		11E236A6295036AD000ED3B1 /* PostModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A5295036AD000ED3B1 /* PostModel.swift */; };
 		11E236A82950374F000ED3B1 /* CommentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11E236A72950374F000ED3B1 /* CommentModel.swift */; };
 		11E236AB29513C0B000ED3B1 /* SwiftUIX in Frameworks */ = {isa = PBXBuildFile; productRef = 11E236AA29513C0B000ED3B1 /* SwiftUIX */; };
+		11F66E9729BE5A4E00C36DEE /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F66E9629BE5A4E00C36DEE /* AuthManager.swift */; };
+		11F66E9929BE5B1A00C36DEE /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F66E9829BE5B1A00C36DEE /* DatabaseManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,9 +90,6 @@
 		114BC136295D5A98007AF5D8 /* TweetRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TweetRowView.swift; sourceTree = "<group>"; };
 		114BC138295D9108007AF5D8 /* AddPostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPostView.swift; sourceTree = "<group>"; };
 		114BC13A295D97E4007AF5D8 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
-		114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruddyChatsViewModel.swift; sourceTree = "<group>"; };
-		114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageViewModel.swift; sourceTree = "<group>"; };
-		114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewMessageView.swift; sourceTree = "<group>"; };
 		11624580295EAA8B00C28664 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		11624582295FC50E00C28664 /* MakerspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MakerspaceView.swift; sourceTree = "<group>"; };
 		11624584295FD2FA00C28664 /* StoryModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoryModel.swift; sourceTree = "<group>"; };
@@ -103,17 +99,19 @@
 		118AE372294D9BFD00331D6C /* UserModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserModel.swift; sourceTree = "<group>"; };
 		118AE374294D9C5200331D6C /* SelectProfileImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectProfileImageView.swift; sourceTree = "<group>"; };
 		118AE376294D9CB800331D6C /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
-		118AE379294E95F800331D6C /* TruddyChatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TruddyChatsView.swift; sourceTree = "<group>"; };
+		118AE379294E95F800331D6C /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
+		119AE46029BBA3CF00B96679 /* UserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserView.swift; sourceTree = "<group>"; };
+		119AE46229BBB52300B96679 /* CreateNewChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateNewChatView.swift; sourceTree = "<group>"; };
 		11ACABA629B93ED200F8AF55 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		11DE0463294D7AEE00954E2E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "../../../../Downloads/GoogleService-Info.plist"; sourceTree = "<group>"; };
-		11E23695294FC8AA000ED3B1 /* ChatLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogView.swift; sourceTree = "<group>"; };
-		11E2369729501863000ED3B1 /* ChatLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogViewModel.swift; sourceTree = "<group>"; };
-		11E2369A29502265000ED3B1 /* RecentMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentMessage.swift; sourceTree = "<group>"; };
-		11E2369C295022C9000ED3B1 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		11E23695294FC8AA000ED3B1 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		11E2369C295022C9000ED3B1 /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
 		11E2369F29502472000ED3B1 /* FirebaseConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseConstants.swift; sourceTree = "<group>"; };
-		11E236A129502BB8000ED3B1 /* MessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageView.swift; sourceTree = "<group>"; };
+		11E236A129502BB8000ED3B1 /* ChatMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageView.swift; sourceTree = "<group>"; };
 		11E236A5295036AD000ED3B1 /* PostModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostModel.swift; sourceTree = "<group>"; };
 		11E236A72950374F000ED3B1 /* CommentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentModel.swift; sourceTree = "<group>"; };
+		11F66E9629BE5A4E00C36DEE /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		11F66E9829BE5B1A00C36DEE /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,11 +173,16 @@
 		113D7A24294D73B30032A457 /* The-Stomping-Ground */ = {
 			isa = PBXGroup;
 			children = (
-				11E2369E29502460000ED3B1 /* Utils */,
-				11E2369929502204000ED3B1 /* Model */,
-				118AE37C294E962400331D6C /* User-Authentication */,
-				118AE37B294E95FE00331D6C /* User-Profile */,
+				114BC133295D56ED007AF5D8 /* HomeView.swift */,
+				114BC138295D9108007AF5D8 /* AddPostView.swift */,
+				11624582295FC50E00C28664 /* MakerspaceView.swift */,
+				114BC13A295D97E4007AF5D8 /* SearchView.swift */,
+				11624580295EAA8B00C28664 /* NotificationsView.swift */,
 				118AE378294E95DC00331D6C /* Truddy-Chats */,
+				118AE37B294E95FE00331D6C /* User-Profile */,
+				118AE37C294E962400331D6C /* User-Authentication */,
+				11E2369929502204000ED3B1 /* Model */,
+				11E2369E29502460000ED3B1 /* Utils */,
 				113D7A25294D73B30032A457 /* The_Stomping_GroundApp.swift */,
 				113D7A29294D73B40032A457 /* Assets.xcassets */,
 				114BC12F295D502A007AF5D8 /* Camp Pictures */,
@@ -226,8 +229,11 @@
 		118AE378294E95DC00331D6C /* Truddy-Chats */ = {
 			isa = PBXGroup;
 			children = (
-				11E236A429502BFE000ED3B1 /* Models */,
-				11E236A329502BE6000ED3B1 /* Views */,
+				114BC135295D5A81007AF5D8 /* Components */,
+				118AE379294E95F800331D6C /* ChatListView.swift */,
+				119AE46229BBB52300B96679 /* CreateNewChatView.swift */,
+				11E23695294FC8AA000ED3B1 /* ChatView.swift */,
+				11E236A129502BB8000ED3B1 /* ChatMessageView.swift */,
 			);
 			path = "Truddy-Chats";
 			sourceTree = "<group>";
@@ -235,6 +241,8 @@
 		118AE37B294E95FE00331D6C /* User-Profile */ = {
 			isa = PBXGroup;
 			children = (
+				119AE46029BBA3CF00B96679 /* UserView.swift */,
+				11624586295FD84800C28664 /* UserProfileView.swift */,
 				118AE376294D9CB800331D6C /* EditProfileView.swift */,
 				118AE374294D9C5200331D6C /* SelectProfileImageView.swift */,
 			);
@@ -253,8 +261,7 @@
 		11E2369929502204000ED3B1 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				11E2369A29502265000ED3B1 /* RecentMessage.swift */,
-				11E2369C295022C9000ED3B1 /* ChatMessage.swift */,
+				11E2369C295022C9000ED3B1 /* ChatModel.swift */,
 				118AE372294D9BFD00331D6C /* UserModel.swift */,
 				11E236A5295036AD000ED3B1 /* PostModel.swift */,
 				11E236A72950374F000ED3B1 /* CommentModel.swift */,
@@ -266,40 +273,22 @@
 		11E2369E29502460000ED3B1 /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				11F66E9529BE5A1700C36DEE /* Firebase-Manager */,
 				118AE36A294D818D00331D6C /* Extensions.swift */,
-				118AE36C294D92A900331D6C /* FirebaseManager.swift */,
 				11E2369F29502472000ED3B1 /* FirebaseConstants.swift */,
 				11ACABA629B93ED200F8AF55 /* Constants.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
 		};
-		11E236A329502BE6000ED3B1 /* Views */ = {
+		11F66E9529BE5A1700C36DEE /* Firebase-Manager */ = {
 			isa = PBXGroup;
 			children = (
-				114BC135295D5A81007AF5D8 /* Components */,
-				118AE379294E95F800331D6C /* TruddyChatsView.swift */,
-				11E23695294FC8AA000ED3B1 /* ChatLogView.swift */,
-				114C8E03294F7E4D00028512 /* CreateNewMessageView.swift */,
-				11E236A129502BB8000ED3B1 /* MessageView.swift */,
-				114BC133295D56ED007AF5D8 /* HomeView.swift */,
-				114BC138295D9108007AF5D8 /* AddPostView.swift */,
-				114BC13A295D97E4007AF5D8 /* SearchView.swift */,
-				11624580295EAA8B00C28664 /* NotificationsView.swift */,
-				11624582295FC50E00C28664 /* MakerspaceView.swift */,
-				11624586295FD84800C28664 /* UserProfileView.swift */,
+				118AE36C294D92A900331D6C /* FirebaseManager.swift */,
+				11F66E9629BE5A4E00C36DEE /* AuthManager.swift */,
+				11F66E9829BE5B1A00C36DEE /* DatabaseManager.swift */,
 			);
-			path = Views;
-			sourceTree = "<group>";
-		};
-		11E236A429502BFE000ED3B1 /* Models */ = {
-			isa = PBXGroup;
-			children = (
-				114C8DFC294F67CD00028512 /* TruddyChatsViewModel.swift */,
-				11E2369729501863000ED3B1 /* ChatLogViewModel.swift */,
-				114C8E01294F7E1300028512 /* CreateNewMessageViewModel.swift */,
-			);
-			path = Models;
+			path = "Firebase-Manager";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -452,34 +441,33 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				11E23696294FC8AA000ED3B1 /* ChatLogView.swift in Sources */,
-				11E2369D295022C9000ED3B1 /* ChatMessage.swift in Sources */,
+				11E23696294FC8AA000ED3B1 /* ChatView.swift in Sources */,
+				11E2369D295022C9000ED3B1 /* ChatModel.swift in Sources */,
 				11624585295FD2FA00C28664 /* StoryModel.swift in Sources */,
 				11E236A029502472000ED3B1 /* FirebaseConstants.swift in Sources */,
 				114BC137295D5A98007AF5D8 /* TweetRowView.swift in Sources */,
 				11ACABA729B93ED200F8AF55 /* Constants.swift in Sources */,
 				11624583295FC50E00C28664 /* MakerspaceView.swift in Sources */,
+				119AE46329BBB52300B96679 /* CreateNewChatView.swift in Sources */,
 				114BC13B295D97E4007AF5D8 /* SearchView.swift in Sources */,
 				11624587295FD84800C28664 /* UserProfileView.swift in Sources */,
-				114C8DFD294F67CD00028512 /* TruddyChatsViewModel.swift in Sources */,
-				11E2369B29502265000ED3B1 /* RecentMessage.swift in Sources */,
-				114C8E02294F7E1300028512 /* CreateNewMessageViewModel.swift in Sources */,
+				11F66E9729BE5A4E00C36DEE /* AuthManager.swift in Sources */,
 				118AE36D294D92A900331D6C /* FirebaseManager.swift in Sources */,
-				114C8E04294F7E4D00028512 /* CreateNewMessageView.swift in Sources */,
 				118AE375294D9C5200331D6C /* SelectProfileImageView.swift in Sources */,
 				118AE373294D9BFD00331D6C /* UserModel.swift in Sources */,
 				118AE36B294D818D00331D6C /* Extensions.swift in Sources */,
-				118AE37A294E95F800331D6C /* TruddyChatsView.swift in Sources */,
-				11E236A229502BB8000ED3B1 /* MessageView.swift in Sources */,
+				118AE37A294E95F800331D6C /* ChatListView.swift in Sources */,
+				11E236A229502BB8000ED3B1 /* ChatMessageView.swift in Sources */,
 				113D7A6C294D77DD0032A457 /* LoginView.swift in Sources */,
 				11624581295EAA8B00C28664 /* NotificationsView.swift in Sources */,
 				11E236A6295036AD000ED3B1 /* PostModel.swift in Sources */,
+				11F66E9929BE5B1A00C36DEE /* DatabaseManager.swift in Sources */,
 				114BC134295D56ED007AF5D8 /* HomeView.swift in Sources */,
 				113D7A6E294D77DF0032A457 /* RegisterAccountView.swift in Sources */,
-				11E2369829501863000ED3B1 /* ChatLogViewModel.swift in Sources */,
 				114BC139295D9108007AF5D8 /* AddPostView.swift in Sources */,
 				11E236A82950374F000ED3B1 /* CommentModel.swift in Sources */,
 				118AE377294D9CB800331D6C /* EditProfileView.swift in Sources */,
+				119AE46129BBA3CF00B96679 /* UserView.swift in Sources */,
 				113D7A26294D73B30032A457 /* The_Stomping_GroundApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

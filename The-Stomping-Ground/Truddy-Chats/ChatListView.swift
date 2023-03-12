@@ -6,33 +6,37 @@
 //
 
 import SwiftUI
+import Firebase
+import FirebaseFirestore
+import FirebaseFirestoreSwift
 import SDWebImageSwiftUI
 
-struct TruddyChatsView: View {
+struct ChatListView: View {
     
-    @State var chatUser: User?
+    @State var chat: Chat?
+    @State private var longPressedChat: Chat?
     
-    @ObservedObject private var truddyChatsViewModel = TruddyChatsViewModel()
-    private var chatLogViewModel = ChatLogViewModel(chatUser: nil)
+    @ObservedObject private var chatListViewModel = ChatListViewModel()
+    private var chatViewModel = ChatViewModel(chat: nil, currentUser: nil)
     
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
             VStack {
-                truddyNavBar
+                chatListNavBar
                 messagesView
                 NavigationLink("", isActive: $shouldNavigateToChatLogView) {
-                    ChatLogView(chatUser: self.chatUser)
+                    ChatView(chat: self.chat, currentUser: chatListViewModel.currentUser)
                 }
             }
-            .overlay(newMessageButton, alignment: .bottom)
+            .overlay(newChatButton, alignment: .bottom)
             .navigationBarHidden(true)
         }
     }
     
     @State private var shouldShowLogOutOptions = false
-    private var truddyNavBar: some View {
+    private var chatListNavBar: some View {
         HStack(spacing: 16) {
             
             Button(action: {
@@ -42,9 +46,9 @@ struct TruddyChatsView: View {
             }.padding()
             
             Spacer()
-                        
+            
             HStack {
-                WebImage(url: URL(string: truddyChatsViewModel.chatUser?.profileImageUrl ?? ""))
+                WebImage(url: URL(string: chatListViewModel.currentUser?.profileImageUrl ?? ""))
                     .resizable()
                     .scaledToFill()
                     .frame(width: 40, height: 40)
@@ -56,7 +60,7 @@ struct TruddyChatsView: View {
                     .padding(.leading, 16)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    let name = truddyChatsViewModel.chatUser?.name ?? ""
+                    let name = chatListViewModel.currentUser?.name ?? ""
                     
                     Text(name)
                         .font(.system(size: 16, weight: .bold))
@@ -69,7 +73,7 @@ struct TruddyChatsView: View {
                             .font(.system(size: 12))
                             .foregroundColor(Color(.lightGray))
                     }
-                   
+                    
                 }
             }
             
@@ -86,16 +90,16 @@ struct TruddyChatsView: View {
             .actionSheet(isPresented: $shouldShowLogOutOptions) {
                 .init(title: Text("Settings"), buttons: [
                     .destructive(Text("Sign Out"), action: {
-                        truddyChatsViewModel.handleSignOut()
+                        chatListViewModel.handleSignOut()
                     }),
                     .cancel()
                 ])
             }
-            .fullScreenCover(isPresented: $truddyChatsViewModel.isUserCurrentlyLoggedOut, onDismiss: nil) {
+            .fullScreenCover(isPresented: $chatListViewModel.isUserCurrentlyLoggedOut, onDismiss: nil) {
                 LoginView(didCompleteLoginProcess: {
-                    self.truddyChatsViewModel.isUserCurrentlyLoggedOut = false
-                    self.truddyChatsViewModel.fetchCurrentUser()
-                    self.truddyChatsViewModel.fetchRecentMessages()
+                    self.chatListViewModel.isUserCurrentlyLoggedOut = false
+                    self.chatListViewModel.fetchCurrentUser()
+                    self.chatListViewModel.fetchChats()
                 })
             }
             
@@ -104,22 +108,19 @@ struct TruddyChatsView: View {
     
     private var messagesView: some View {
         ScrollView {
-            ForEach(truddyChatsViewModel.recentMessages) { recentMessage in
+            ForEach(chatListViewModel.chats) { chat in
                 LazyVStack {
                     Spacer()
                     
                     Button {
-                        let uid = FirebaseManager.shared.auth.currentUser?.uid == recentMessage.fromId ? recentMessage.toId : recentMessage.fromId
+                        self.chat = .init(id: chat.id, createdAt: chat.createdAt, name: chat.name, participants: chat.participants, lastMessage: chat.lastMessage, messages: chat.messages)
                         
-                        self.chatUser = .init(id: uid, uid: uid, name: recentMessage.name, username: recentMessage.username, email: recentMessage.email, profileImageUrl: recentMessage.profileImageURL
-                        )
-                        
-                        self.chatLogViewModel.chatUser = self.chatUser
-                        self.chatLogViewModel.fetchMessages()
+                        self.chatViewModel.chat = self.chat
+                        self.chatViewModel.fetchChatMessages()
                         self.shouldNavigateToChatLogView.toggle()
                     } label: {
                         HStack(spacing: 16) {
-                            WebImage(url: URL(string: recentMessage.profileImageURL))
+                            WebImage(url: URL(string: "ADD CHAT IMAGE"))
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: 40, height: 40)
@@ -131,18 +132,19 @@ struct TruddyChatsView: View {
                             
                             
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(recentMessage.name)
+                                Text(chat.name)
                                     .font(.system(size: 16, weight: .bold))
                                     .foregroundColor(Color(.label))
                                     .multilineTextAlignment(.leading)
-                                Text(recentMessage.text)
+                                Text(chat.lastMessage)
                                     .font(.system(size: 14))
-                                    .foregroundColor(Color(.darkGray))
+                                    .foregroundColor(chat.messages.last?.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Color(.darkGray) : Color(.label))
                                     .multilineTextAlignment(.leading)
+                                    .lineLimit(1)
                             }
                             Spacer()
                             
-                            Text(recentMessage.timeAgo)
+                            Text(chat.timeAgo)
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(Color(.label))
                         }
@@ -150,22 +152,23 @@ struct TruddyChatsView: View {
                     
                     Divider()
                         .padding(.vertical, 8)
-                }.padding(.horizontal)
-                
+                }
+                .padding(.horizontal)
             }.padding(.bottom, 50)
         }
     }
     
-    @State var shouldShowNewMessageScreen = false
+    
+    @State var shouldShowNewChatScreen = false
     
     @State private var shouldNavigateToChatLogView = false
-    private var newMessageButton: some View {
+    private var newChatButton: some View {
         Button {
-            shouldShowNewMessageScreen.toggle()
+            shouldShowNewChatScreen.toggle()
         } label: {
             HStack {
                 Spacer()
-                Text("+ New Message")
+                Text("+ New Chat")
                     .font(.system(size: 16, weight: .bold))
                 Spacer()
             }
@@ -177,22 +180,76 @@ struct TruddyChatsView: View {
             .shadow(radius: 15)
         }
         .padding(12)
-        .fullScreenCover(isPresented: $shouldShowNewMessageScreen) {
-            CreateNewMessageView(didSelectNewUser: { user in
-                print(user.email)
+        .fullScreenCover(isPresented: $shouldShowNewChatScreen) {
+            CreateNewChatView(isPresented: $shouldShowNewChatScreen, didStartNewChat: { chat in
                 self.shouldNavigateToChatLogView.toggle()
-                self.chatUser = user
-                self.chatLogViewModel.chatUser = user
-                self.chatLogViewModel.fetchMessages()
-            }, chatUser: truddyChatsViewModel.chatUser)
+                self.chatViewModel.chat = chat
+                self.chatViewModel.fetchChatMessages()
+            })
+        }
+    }
+}
+
+class ChatListViewModel: ObservableObject {
+    @Published var errorMessage = ""
+    @Published var currentUser: User?
+    @Published var chat: Chat?
+    @Published var isUserCurrentlyLoggedOut = false
+    @Published var chats = [Chat]()
+    
+    private var listener: ListenerRegistration?
+    private let firestore = Firestore.firestore()
+    
+    init() {
+        DispatchQueue.main.async {
+            self.isUserCurrentlyLoggedOut = FirebaseManager.shared.auth.currentUser?.uid == nil
+        }
+        fetchCurrentUser()
+        fetchChats()
+    }
+    
+    func fetchCurrentUser() {
+        FirebaseManager.shared.fetchCurrentUser { user in
+            self.currentUser = user
+            self.fetchChats()
         }
     }
     
+    func fetchChats() {
+        self.listener = FirebaseManager.shared.fetchChatsForCurrentUser { result in
+            switch result {
+            case .success(let chats):
+                self.chats = chats
+            case .failure(let error):
+                print("Error fetching chats: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func deleteChat(chat: Chat) {
+        FirebaseManager.shared.deleteChat(chat: chat) { result in
+            switch result {
+            case .success:
+                break // do nothing
+            case .failure(let error):
+                print("Error deleting chat: \(error)")
+            }
+        }
+    }
+    
+    deinit {
+        listener?.remove()
+    }
+    
+    func handleSignOut() {
+        isUserCurrentlyLoggedOut.toggle()
+        try? FirebaseManager.shared.auth.signOut()
+    }
     
 }
 
-struct TruddyChatsView_Preview: PreviewProvider {
+struct ChatListView_Preview: PreviewProvider {
     static var previews: some View {
-        TruddyChatsView()
+        ContentView()
     }
 }

@@ -67,3 +67,8 @@ extension String {
         return true
     }
 }
+
+extension FirebaseManager {
+    
+}
+

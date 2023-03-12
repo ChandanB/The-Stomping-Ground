@@ -34,7 +34,7 @@ struct AddPostView: View {
                 })
             }, trailingButton: {
                 AnyView(Button(action: {
-                    self.createPost(image: addPostViewModel.postImage ?? UIImage(), caption: caption)
+                    self.createPost(media: addPostViewModel.postMedia, caption: caption)
                 }) {
                     Text("Post")
                         .fontWeight(.bold)
@@ -68,37 +68,50 @@ struct AddPostView: View {
         }
     }
     
-    func createPost(image: UIImage, caption: String) {
-        guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
-
-        let postImageRef = StorageConstants.storagePostImagesRef.child(NSUUID().uuidString)
+    func createPost(media: Data?, caption: String) {
+        guard let mediaData = media else { return }
         
-        postImageRef.putData(imageData) { metadata, err in
+        let postMediaRef = StorageConstants.storagePostMediaRef.child(NSUUID().uuidString)
+        
+        postMediaRef.putData(mediaData) { metadata, err in
             if let err = err {
                 print("Failed to upload profile image:", err)
                 return
             }
-            postImageRef.downloadURL { url, err in
+            postMediaRef.downloadURL { url, err in
                 if let err = err {
-                    print("Failed to obtain download url for profile image:", err)
+                    print("Failed to obtain download url", err)
                     return
                 }
                 guard let url = url?.absoluteString else { return }
-                // Create a new Post object using the provided parameters
-                let newPost = Post(id: nil, numLikes: 0, postImage: url, timestamp: Date(), hasLiked: false, postComments: [], user: FirebaseManager.shared.currentUser!, caption: caption)
                 
-                // Generate a unique ID for the new post
-                let postId = UUID().uuidString
-                
-                // Add the new post to the Firestore database
-                do {
-                    try FirebaseManager.shared.firestore.collection("posts").document(postId).setData(from: newPost)
-                    print("Successfully created new post with ID: \(postId)")
-                    self.showAlert.toggle()
-                    self.alertTitle = "Success"
-                    self.alertMessage = "Your post was successfully created!"
-                } catch {
-                    self.errorMessage = "Failed to create new post: \(error)"
+                FirebaseManager.shared.fetchCurrentUser { user in
+                    // Create a new Post object using the provided parameters
+                    let newPost = Post(
+                        id: nil,
+                        numLikes: 0,
+                        caption: caption,
+                        user: user,
+                        timestamp: Date(),
+                        postComments: [],
+                        postIsVideo: addPostViewModel.imageSelection?.supportedContentTypes.contains(.movie) ?? false,
+                        hasLiked: false,
+                        postMedia: url
+                       )
+                    
+                    // Generate a unique ID for the new post
+                    let postId = UUID().uuidString
+                    
+                    // Add the new post to the Firestore database
+                    do {
+                        try FirebaseManager.shared.firestore.collection("posts").document(postId).setData(from: newPost)
+                        print("Successfully created new post with ID: \(postId)")
+                        self.showAlert.toggle()
+                        self.alertTitle = "Success"
+                        self.alertMessage = "Your post was successfully created!"
+                    } catch {
+                        self.errorMessage = "Failed to create new post: \(error)"
+                    }
                 }
             }
         }
@@ -132,6 +145,7 @@ class AddPostViewModel: ObservableObject {
     @Published var caption = ""
     @Published var postImage: UIImage?
     @Published var showImagePicker = false
+    @Published var postMedia: Data?
     
     // MARK: - Profile Image
     enum ImageState {

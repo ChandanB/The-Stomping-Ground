@@ -11,19 +11,21 @@ import FirebaseFirestoreSwift
 struct Post: Codable, Identifiable {
     @DocumentID var id: String?
     let numLikes: Int
-    let postImage: String?
-    
-    let timestamp: Date
-   
-    let hasLiked: Bool?
-    let postComments: [Comment]?
-    
-    let user: User
     let caption: String
+    let user: User
+    let timestamp: Date
+    let postComments: [Comment]?
+    let postIsVideo: Bool?
+    let hasLiked: Bool?
     
-    var postIsVideo: Bool? = false
-    var postImageURL: URL? {
-        URL(string: postImage ?? "")
+    var postMedia: String?
+    
+    var postMediaURL: URL? {
+        if let postMedia = postMedia {
+            return URL(string: postMedia)
+        } else {
+            return nil
+        }
     }
     
     var timeAgo: String {
@@ -32,3 +34,5 @@ struct Post: Codable, Identifiable {
         return formatter.localizedString(for: timestamp, relativeTo: Date())
     }
 }
+
+

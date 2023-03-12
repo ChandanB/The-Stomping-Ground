@@ -64,9 +64,8 @@ struct ContentView: View {
     struct HomeNavigationBar: View {
         var body: some View {
             HStack {
-                
                 NavigationLink {
-                    TruddyChatsView().navigationBarBackButtonHidden()
+                    ChatListView().navigationBarBackButtonHidden()
                 } label: {
                     Image(systemName: "message")
                         .foregroundColor(.black)
@@ -85,7 +84,6 @@ struct ContentView: View {
                     Image(systemName: "plus")
                         .foregroundColor(.black)
                 }.frame(width: 16, height: 16)
-                
             }
             .padding()
         }
@@ -112,7 +110,9 @@ struct HomeView: View {
                 
                 ScrollView {
                     VStack {
+                        Text("asdas")
                         ForEach(homeViewModel.posts) { post in
+                            Text("OIST")
                             PostView(post: post)
                         }
                         .padding()
@@ -123,7 +123,6 @@ struct HomeView: View {
             .navigationBarHidden(true)
         }
     }
-    
 }
 
 struct StoryView: View {
@@ -193,37 +192,16 @@ class HomeViewModel: ObservableObject {
     @Published var stories = [Story]()
 
     func fetchFollowing() {
-        FirebaseManager.shared.firestore.collection("users").document(FirebaseManager.shared.currentUser!.uid).collection("following").getDocuments { (querySnapshot, error) in
-            if let error = error {
-                print("Error fetching following users: \(error)")
-                return
-            }
-            guard let followingUserDocuments = querySnapshot?.documents else { return }
-            for userDocument in followingUserDocuments {
-                let followingUserId = userDocument.documentID
-                self.fetchPosts(userId: followingUserId)
-                self.fetchStories(userId: followingUserId)
-            }
-            
+        FirebaseManager.shared.fetchHomeFeed { posts in
+            self.posts = posts
         }
-    }
-    
-    func fetchPosts(userId: String) {
-        FirestoreCollectionReferences.users.document(userId).collection("posts").getDocuments(completion: { (querySnapshot, error) in
-            if let error = error {
-                print("Error fetching posts for user with ID: \(userId) " + " Error: \(error)")
-                return
+        
+        guard let uid = FirestoreConstants.currentUser?.uid else {return}
+        FirebaseManager.shared.fetchFollowing(userId: uid) { following in
+            for user in following {
+                self.fetchStories(userId: user.uid)
             }
-            guard let postDocuments = querySnapshot?.documents else { return }
-            for document in postDocuments {
-                do {
-                    let post = try document.data(as: Post.self)
-                    self.posts.append(post)
-                } catch {
-                    print(error)
-                }
-            }
-        })
+        }
     }
     
     func fetchStories(userId: String) {
@@ -244,5 +222,6 @@ class HomeViewModel: ObservableObject {
         })
     }
 }
+
 
 

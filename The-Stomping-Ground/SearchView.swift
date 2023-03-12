@@ -72,7 +72,7 @@ struct PostCell: View {
                     }
                     
                     // Post image
-                    WebImage(url: URL(string: post.postImage ?? ""))
+                    WebImage(url: URL(string: post.postMedia ?? ""))
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .scaledToFit()
