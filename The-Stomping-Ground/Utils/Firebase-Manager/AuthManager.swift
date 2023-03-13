@@ -20,8 +20,8 @@ extension FirebaseManager {
         })
     }
     
-    func signUp(bio: String, name: String, username: String, email: String, password: String, image: UIImage, onSuccess: @escaping () -> Void, onError:  @escaping (_ errorMessage: String?) -> Void) {
-        
+    func signUp(bio: String, name: String, username: String, email: String, password: String, image: UIImage, userType: UserType, onSuccess: @escaping () -> Void, onError:  @escaping (_ errorMessage: String?) -> Void) {
+            
         Auth.auth().createUser(withEmail: email, password: password, completion: { (result, err) in
             if let err = err {
                 print("Failed to create user:", err)
@@ -32,22 +32,23 @@ extension FirebaseManager {
                 return
             }
             FirebaseManager.uploadUserProfileImage(image: image) { (profileImageUrl) in
-                FirebaseManager.uploadUser(withUID: uid, bio: bio, name: name, username: username, email: email, profileImageUrl: profileImageUrl) {
+                FirebaseManager.uploadUser(withUID: uid, bio: bio, name: name, username: username, email: email, profileImageUrl: profileImageUrl, userType: userType) {
                     onSuccess()
                     return
                 }
             }
         })
     }
-    
-    static func uploadUser(withUID uid: String, bio: String, name: String, username: String, email: String, profileImageUrl: String? = nil, completion: @escaping (() -> Void)) {
+
+    static func uploadUser(withUID uid: String, bio: String, name: String, username: String, email: String, profileImageUrl: String? = nil, userType: UserType, completion: @escaping (() -> Void)) {
         let userData = [
             FirestoreConstants.uid: uid,
             FirestoreConstants.name: name,
             FirestoreConstants.username: username,
             FirestoreConstants.email: email,
             FirestoreConstants.bio: bio,
-            FirestoreConstants.profileImageUrl: profileImageUrl]
+            FirestoreConstants.profileImageUrl: profileImageUrl,
+            FirestoreConstants.userType: userType.rawValue]
         
         FirestoreCollectionReferences.users
             .document(uid).setData(userData as [String : Any]) { err in
@@ -57,6 +58,27 @@ extension FirebaseManager {
                 }
                 completion()
             }
+        
+        if userType.rawValue == "camper" {
+            FirestoreCollectionReferences.campers
+                .document(uid).setData(userData as [String : Any]) { err in
+                    if let err = err {
+                        print("Failed to upload user to database:", err)
+                        return
+                    }
+                    completion()
+                }
+        } else {
+            FirestoreCollectionReferences.counselors
+                .document(uid).setData(userData as [String : Any]) { err in
+                    if let err = err {
+                        print("Failed to upload user to database:", err)
+                        return
+                    }
+                    completion()
+                }
+        }
+        
     }
     
     static func uploadUserProfileImage(image: UIImage, completion: @escaping (String) -> Void) {
@@ -79,4 +101,34 @@ extension FirebaseManager {
             }
         }
     }
+    
+    static func updateStatus(status: String) {
+        guard let currentUserID = FirestoreConstants.currentUser?.uid else { return }
+        let userRef = FirestoreCollectionReferences.users.document(currentUserID)
+        userRef.updateData(["status": status])
+    }
+    
+    static func addStatusListener() {
+        guard let currentUserID = FirestoreConstants.currentUser?.uid else { return }
+        let userRef = FirestoreCollectionReferences.users.document(currentUserID)
+        userRef.addSnapshotListener { documentSnapshot, error in
+            guard let document = documentSnapshot else {
+                print("Error fetching document: \(error!)")
+                return
+            }
+            guard let status = document.get("status") as? String else {
+                print("Error getting status")
+                return
+            }
+            if status == "online" {
+                // User is currently online
+            } else {
+                // User is currently offline
+            }
+        }
+    }
+    
+   
+
+
 }

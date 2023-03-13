@@ -48,6 +48,24 @@ extension RootPresentationMode {
     }
 }
 
+// Debouncer helper class
+class Debouncer {
+    private let delay: DispatchTimeInterval
+    private let queue: DispatchQueue
+    private var workItem: DispatchWorkItem?
+
+    init(delay: DispatchTimeInterval, queue: DispatchQueue = DispatchQueue.main) {
+        self.delay = delay
+        self.queue = queue
+    }
+
+    func run(action: @escaping () -> Void) {
+        workItem?.cancel()
+        workItem = DispatchWorkItem(block: action)
+        queue.asyncAfter(deadline: .now() + delay, execute: workItem!)
+    }
+}
+
 
 extension String {
 

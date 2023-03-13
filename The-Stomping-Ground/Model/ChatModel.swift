@@ -11,23 +11,33 @@ import FirebaseFirestoreSwift
 struct Chat: Codable, Identifiable {
     @DocumentID var id: String?
     let createdAt: Date
-    var name: String
+    var createdBy, name, lastMessage: String
+    var chatImageUrl: String {
+        didSet {
+        }
+    }
     var participants: [String]
-    var lastMessage: String
-    var messages: [ChatMessage]
-    
+    var lastMessageTime: Date
+    var seenBy: [String: Bool]
+
     var timeAgo: String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: createdAt, relativeTo: Date())
     }
+    
+    var lastMessageTimeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: lastMessageTime, relativeTo: Date())
+    }
+ 
 }
 
 struct ChatMessage: Codable, Identifiable {
     @DocumentID var id: String?
     let fromId, text, chatId: String
     let timestamp: Date
-    var seenBy: [String: Bool]
 }
 
 struct ChatMessageSubtitle {

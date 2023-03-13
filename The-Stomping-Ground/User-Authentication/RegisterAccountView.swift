@@ -18,7 +18,9 @@ struct RegisterAccountView: View {
     @State private var confirmPassword = ""
     @State private var bio = ""
     @State private var image: UIImage?
-
+    @State private var userType: UserType?
+    
+    
     @State private var creationStatusMessage = ""
     @State private var accountSuccessfullyCreated = false
     
@@ -51,7 +53,6 @@ struct RegisterAccountView: View {
         NavigationStack {
             createAccountForm
         }
-        .overlay(alreadyHaveAccountText, alignment: .bottom)
         .navigationTitle("")
         .navigationBarHidden(true)
         .background(Color(.init(white: 0, alpha: 0.09)))
@@ -63,12 +64,20 @@ struct RegisterAccountView: View {
                 VStack(spacing: 12) {
                     EditableCircularProfileImage(viewModel: userModel)
                         .padding(.bottom, 16)
-                    ValidationMessageView(message: validationMessage)
+                    CamperCounselorToggleButtons
+                        .padding([.leading, .trailing])
                     FormFields
                     Spacer()
-                    CreateAccountButton(title: "Create Account", backgroundColor: .blue, isDisabled: !isFormValid) {
-                        handleAuthentication()
+                    ValidationMessageView(message: validationMessage)
+                    VStack {
+                        CreateAccountButton(title: "Create Account", backgroundColor: .blue, isDisabled: !isFormValid) {
+                            handleAuthentication()
+                        }
+                        .padding(.bottom)
+                        alreadyHaveAccountText
+                            .padding(.top, 60)
                     }
+                  
                     Spacer()
                 }
                 .padding()
@@ -78,12 +87,29 @@ struct RegisterAccountView: View {
         }
     }
     
+    private var CamperCounselorToggleButtons: some View {
+        VStack(spacing: 7) {
+            Text(userType == UserType.counselor ? "Counselor" : "Camper")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundColor(.black)
+            VStack(spacing: 20) {
+                Toggle(isOn: Binding(
+                    get: { self.userType == UserType.counselor },
+                    set: { self.userType = $0 ? UserType.counselor : nil })) {
+                        Text("Counselor")
+                            .foregroundColor(.black)
+                            .font(.system(size: 14, weight: .medium))
+                    }
+            }
+        }
+    }
+    
     struct CreateAccountButton: View {
         let title: String
         let backgroundColor: Color
         let isDisabled: Bool
         let action: () -> Void
-
+        
         var body: some View {
             Button(action: action) {
                 HStack {
@@ -100,52 +126,55 @@ struct RegisterAccountView: View {
             .cornerRadius(12)
         }
     }
-
     
     private var FormFields: some View {
-        Group {
-            TextField("Name", text: $name)
-                .autocorrectionDisabled()
-            
-            TextField("Username", text: $username)
-                .autocorrectionDisabled()
-            
-            TextField("Email", text: $email)
-                .textContentType(.emailAddress)
-                .keyboardType(.emailAddress)
-                .autocapitalization(.none)
-                .autocorrectionDisabled()
-            
-            PasswordTextField(label: "Password", isSecure: !isPasswordVisible, text: $password)
-            
-            HStack {
-                PasswordTextField(label: "Confirm Password", isSecure: !isPasswordVisible, text: $confirmPassword)
+        VStack {
+            Group {
+                TextField("Name", text: $name)
+                    .autocorrectionDisabled()
                 
-                Button(action: {
-                    self.isPasswordVisible.toggle()
-                }, label: {
-                    Image(systemName: isPasswordVisible ? "eye" : "eye.slash")
-                        .foregroundColor( isPasswordVisible ? .green : .gray)
-                        .frame(width: 20, height: 20, alignment: .center)
-                })
+                TextField("Username", text: $username)
+                    .autocorrectionDisabled()
+                
+                TextField("Email", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
+                    .autocorrectionDisabled()
+                
+                PasswordTextField(label: "Password", isSecure: !isPasswordVisible, text: $password)
+                
+                HStack {
+                    PasswordTextField(label: "Confirm Password", isSecure: !isPasswordVisible, text: $confirmPassword)
+                    
+                    Button(action: {
+                        self.isPasswordVisible.toggle()
+                    }, label: {
+                        Image(systemName: isPasswordVisible ? "eye" : "eye.slash")
+                            .foregroundColor( isPasswordVisible ? .green : .gray)
+                            .frame(width: 20, height: 20, alignment: .center)
+                    })
+                }
             }
+            .padding()
             
             TextField("Bio", text: $bio, axis: .vertical)
                 .lineLimit(3, reservesSpace: true)
                 .background(.white)
                 .textFieldStyle(PlainTextFieldStyle())
-                .cornerRadius(12)
+                .padding([.leading, .trailing, .top])
                 .onReceive(Just(bio)) { _ in limitText(RegisterAccountConstants.aboutMeLimit) }
             Text("\(bio.count)" + " / " + "\(RegisterAccountConstants.aboutMeLimit)")
+                .padding(.leading, 300)
         }
-        .padding()
+        
     }
     
     struct PasswordTextField: View {
         let label: String
         let isSecure: Bool
         let text: Binding<String>
-
+        
         var body: some View {
             if isSecure {
                 SecureField(label, text: text)
@@ -172,22 +201,22 @@ struct RegisterAccountView: View {
     }
     
     private var validationMessage: String? {
-          if name.isEmpty {
-              return "Enter your name"
-          } else if username.isEmpty || username.contains(" ") {
-              return "Enter a username"
-          } else if !isValidEmail(email) {
-              return "Enter your email"
-          } else if !isValidPassword(password) {
-              return "Password must contain 6 characters and a special character"
-          } else if password != confirmPassword {
-              return "Passwords must match"
-          } else if creationStatusMessage != "" {
-              return creationStatusMessage
-          } else {
-              return nil
-          }
-      }
+        if name.isEmpty {
+            return "Enter your name"
+        } else if username.isEmpty || username.contains(" ") {
+            return "Enter a username"
+        } else if !isValidEmail(email) {
+            return "Enter your email"
+        } else if !isValidPassword(password) {
+            return "Password must contain 6 characters and a special character"
+        } else if password != confirmPassword {
+            return "Passwords must match"
+        } else if creationStatusMessage != "" {
+            return creationStatusMessage
+        } else {
+            return nil
+        }
+    }
     
     private var alreadyHaveAccountText: some View {
         Button {
@@ -199,6 +228,7 @@ struct RegisterAccountView: View {
     
     private func handleAuthentication() {
         var image: UIImage = userModel.profileImage
+        var userType: UserType = self.userType ?? .camper
         
         if image == UIImage() {
             image = UIImage(systemName: "profile") ?? UIImage()
@@ -207,7 +237,7 @@ struct RegisterAccountView: View {
         let isValid = checkIfFormIsValid(name: name, username: username, email: email, password: password)
         
         if isValid {
-            FirebaseManager.shared.signUp(bio: bio, name: name, username: username, email: email, password: password, image: image) {
+            FirebaseManager.shared.signUp(bio: bio, name: name, username: username, email: email, password: password, image: image, userType: userType) {
                 self.accountSuccessfullyCreated = true
                 self.creationStatusMessage = "Successfully created user!"
                 self.didCompleteRegisterProcess()
@@ -225,13 +255,13 @@ struct RegisterAccountView: View {
         let passwordPred = NSPredicate(format:"SELF MATCHES %@", passwordRegex)
         return passwordPred.evaluate(with: password)
     }
-
+    
     private func isValidEmail(_ email: String) -> Bool {
         let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPred = NSPredicate(format:"SELF MATCHES %@", emailRegEx)
         return emailPred.evaluate(with: email)
     }
-
+    
     private func checkIfFormIsValid(name: String, username: String, email: String, password: String) -> Bool {
         var isValid = true
         

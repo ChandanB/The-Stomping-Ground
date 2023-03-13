@@ -10,6 +10,83 @@ import Firebase
 import FirebaseFirestore
 import FirebaseFirestoreSwift
 import SDWebImageSwiftUI
+import Combine
+
+class ChatListViewModel: ObservableObject {
+    @Published var errorMessage = ""
+    @Published var currentUser: User?
+    @Published var chat: Chat?
+    @Published var isUserCurrentlyLoggedOut = false
+    @Published var chats = [Chat]()
+    @Published var usersDictionary = [String: User]()
+    
+    private var listener: ListenerRegistration?
+    private let firestore = Firestore.firestore()
+    
+    private let debouncer = Debouncer(delay: .milliseconds(1000)) // Initialize the debouncer with a delay of 500ms
+    
+    init() {
+        DispatchQueue.main.async {
+            self.isUserCurrentlyLoggedOut = FirebaseManager.shared.auth.currentUser?.uid == nil
+        }
+        fetchCurrentUser()
+        fetchChats()
+    }
+    
+    func fetchCurrentUser() {
+        FirebaseManager.shared.fetchCurrentUser { user in
+            self.currentUser = user
+            self.fetchChats()
+        }
+    }
+    
+    func fetchChatParticpants(chat: Chat) {
+        for particpantId in chat.participants {
+            FirebaseManager.shared.fetchUser(withUID: particpantId) { user in
+                self.usersDictionary[user.uid] = user
+            }
+        }
+    }
+    
+    func fetchChats() {
+        self.listener = FirebaseManager.shared.fetchChatsForCurrentUser { result in
+            switch result {
+            case .success(let chats):
+                self.debouncer.run { // Run the debouncer before updating the chats array
+                    DispatchQueue.main.async {
+                        self.chats = chats
+                        for chat in chats {
+                            self.fetchChatParticpants(chat: chat)
+                        }
+                    }
+                }
+            case .failure(let error):
+                print("Error fetching chats: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func deleteChat(chat: Chat) {
+        FirebaseManager.shared.deleteChat(chat: chat) { result in
+            switch result {
+            case .success:
+                break // do nothing
+            case .failure(let error):
+                print("Error deleting chat: \(error)")
+            }
+        }
+    }
+    
+    deinit {
+        listener?.remove()
+    }
+    
+    func handleSignOut() {
+        isUserCurrentlyLoggedOut.toggle()
+        try? FirebaseManager.shared.auth.signOut()
+    }
+    
+}
 
 struct ChatListView: View {
     
@@ -109,53 +186,68 @@ struct ChatListView: View {
     private var messagesView: some View {
         ScrollView {
             ForEach(chatListViewModel.chats) { chat in
-                LazyVStack {
-                    Spacer()
+                HStack {
                     
-                    Button {
-                        self.chat = .init(id: chat.id, createdAt: chat.createdAt, name: chat.name, participants: chat.participants, lastMessage: chat.lastMessage, messages: chat.messages)
-                        
-                        self.chatViewModel.chat = self.chat
-                        self.chatViewModel.fetchChatMessages()
-                        self.shouldNavigateToChatLogView.toggle()
-                    } label: {
-                        HStack(spacing: 16) {
-                            WebImage(url: URL(string: "ADD CHAT IMAGE"))
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 40, height: 40)
-                                .clipped()
-                                .cornerRadius(40)
-                                .overlay(RoundedRectangle(cornerRadius: 40)
-                                    .stroke(Color.black, lineWidth: 1))
-                                .shadow(radius: 3)
-                            
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(chat.name)
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(Color(.label))
-                                    .multilineTextAlignment(.leading)
-                                Text(chat.lastMessage)
-                                    .font(.system(size: 14))
-                                    .foregroundColor(chat.messages.last?.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Color(.darkGray) : Color(.label))
-                                    .multilineTextAlignment(.leading)
-                                    .lineLimit(1)
-                            }
-                            Spacer()
-                            
-                            Text(chat.timeAgo)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color(.label))
-                        }
-                    }
-                    
-                    Divider()
-                        .padding(.vertical, 8)
                 }
-                .padding(.horizontal)
-            }.padding(.bottom, 50)
+                chatListItemView(chat: chat)
+                    .id(chat.id)
+                    .padding()
+                Divider().padding(.vertical, 8)
+            }
+            .padding(.top)
+            .padding(.horizontal)
+            .padding(.bottom, 50)
         }
+    }
+    
+    private func chatListItemView(chat: Chat) -> some View {
+        return Button(action: {
+            self.chat = Chat(id: chat.id, createdAt: chat.createdAt, createdBy: chat.createdBy, name: chat.name, lastMessage: chat.lastMessage, chatImageUrl: chat.chatImageUrl, participants: chat.participants, lastMessageTime: chat.lastMessageTime, seenBy: chat.seenBy)
+            self.chatViewModel.chat = self.chat
+            self.chatViewModel.fetchChatMessages()
+            self.shouldNavigateToChatLogView.toggle()
+        }) {
+            HStack(spacing: 16) {
+                if chat.chatImageUrl == "" {
+                    participantsAvatars(chat)
+                } else {
+                    chatImage(chat.chatImageUrl)
+                }
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(chat.name)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color(.label))
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(1) //
+                    
+                    Text(chat.lastMessage)
+                        .font(.system(size: 14))
+                        .foregroundColor(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Color(.darkGray) : Color(.label))
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(1)
+                }
+                .padding(.leading)
+                
+                Spacer()
+                
+                Text(chat.lastMessageTimeAgo)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(.label))
+            }
+        }
+    }
+    
+    private func chatImage(_ url: String) -> some View {
+        WebImage(url: URL(string: url))
+            .resizable()
+            .scaledToFill()
+            .frame(width: 40, height: 40)
+            .clipped()
+            .cornerRadius(40)
+            .overlay(RoundedRectangle(cornerRadius: 40)
+                .stroke(Color.black, lineWidth: 1))
+            .shadow(radius: 3)
     }
     
     
@@ -188,64 +280,100 @@ struct ChatListView: View {
             })
         }
     }
-}
-
-class ChatListViewModel: ObservableObject {
-    @Published var errorMessage = ""
-    @Published var currentUser: User?
-    @Published var chat: Chat?
-    @Published var isUserCurrentlyLoggedOut = false
-    @Published var chats = [Chat]()
     
-    private var listener: ListenerRegistration?
-    private let firestore = Firestore.firestore()
-    
-    init() {
-        DispatchQueue.main.async {
-            self.isUserCurrentlyLoggedOut = FirebaseManager.shared.auth.currentUser?.uid == nil
-        }
-        fetchCurrentUser()
-        fetchChats()
-    }
-    
-    func fetchCurrentUser() {
-        FirebaseManager.shared.fetchCurrentUser { user in
-            self.currentUser = user
-            self.fetchChats()
-        }
-    }
-    
-    func fetchChats() {
-        self.listener = FirebaseManager.shared.fetchChatsForCurrentUser { result in
-            switch result {
-            case .success(let chats):
-                self.chats = chats
-            case .failure(let error):
-                print("Error fetching chats: \(error.localizedDescription)")
-            }
+    private func participantsAvatars(_ chat: Chat) -> some View {
+        let participants = chat.participants.compactMap { chatListViewModel.usersDictionary[$0] }
+        let count = min(participants.count, 3)
+        
+        switch count {
+        case 0:
+            return AnyView(EmptyView())
+        case 1:
+            return AnyView(participantAvatar(participant: participants.first, size: 40))
+        case 2:
+            return AnyView(
+                ZStack {
+                    participantAvatar(participant: participants.first, size: 40, offset: CGPoint(x: -15, y: 0))
+                    participantAvatar(participant: participants.last, size: 40, offset: CGPoint(x: 15, y: 0))
+                }
+            )
+        default:
+            return AnyView(
+                ZStack {
+                    participantAvatar(participant: participants.first, size: 40, offset: CGPoint(x: 0, y: -20))
+                    participantAvatar(participant: participants[1], size: 40, offset: CGPoint(x: -20, y: 20))
+                    participantAvatar(participant: participants.last, size: 40, offset: CGPoint(x: 20, y: 20))
+                }
+            )
         }
     }
     
-    func deleteChat(chat: Chat) {
-        FirebaseManager.shared.deleteChat(chat: chat) { result in
-            switch result {
-            case .success:
-                break // do nothing
-            case .failure(let error):
-                print("Error deleting chat: \(error)")
-            }
+    //    private func participantsAvatars(_ chat: Chat) -> some View {
+    //        let participants = chat.participants.compactMap { chatListViewModel.usersDictionary[$0] }
+    //
+    //        switch participants.count {
+    //        case 0:
+    //            return AnyView(EmptyView())
+    //        case 1:
+    //            return AnyView(participantAvatar(participant: participants.first, size: 40))
+    //        case 2:
+    //            return AnyView(
+    //                ZStack {
+    //                    participantAvatar(participant: participants.first, size: 40, offset: CGPoint(x: -15, y: 0))
+    //                    participantAvatar(participant: participants.last, size: 40, offset: CGPoint(x: 15, y: 0))
+    //                }
+    //            )
+    //        case 3:
+    //            return AnyView(
+    //                ZStack {
+    //                    participantAvatar(participant: participants.first, size: 40, offset: CGPoint(x: 15, y: 15))
+    //                    participantAvatar(participant: participants[1], size: 40, offset: CGPoint(x: -15, y: 15))
+    //                    participantAvatar(participant: participants.last, size: 40, offset: CGPoint(x: 0, y: -15))
+    //                }
+    //            )
+    //        case 4:
+    //            return AnyView(
+    //                ZStack {
+    //                    participantAvatar(participant: participants[0], size: 40, offset: CGPoint(x: -15, y: -15))
+    //                    participantAvatar(participant: participants[1], size: 40, offset: CGPoint(x: 15, y: -15))
+    //                    participantAvatar(participant: participants[2], size: 40, offset: CGPoint(x: -15, y: 15))
+    //                    participantAvatar(participant: participants[3], size: 40, offset: CGPoint(x: 15, y: 15))
+    //                }
+    //            )
+    //        default:
+    //            let angleStep = 2 * Double.pi / Double(participants.count)
+    //            return AnyView(
+    //                ZStack {
+    //                    ForEach(participants.indices, id: \.self) { index in
+    //                        let angle = Double(index) * angleStep
+    //                        let radius = 20.0
+    //                        let x = radius * cos(angle)
+    //                        let y = radius * sin(angle)
+    //                        participantAvatar(participant: participants[index], size: 30, offset: CGPoint(x: CGFloat(x), y: CGFloat(y)))
+    //                    }
+    //                }
+    //            )
+    //        }
+    //    }
+    
+    private func participantAvatar(participant: User?, size: CGFloat, offset: CGPoint = .zero) -> some View {
+        if let participant = participant {
+            return AnyView(
+                WebImage(url: URL(string: participant.profileImageUrl))
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .clipped()
+                    .cornerRadius(size / 2)
+                    .overlay(RoundedRectangle(cornerRadius: size / 2)
+                        .stroke(Color.white, lineWidth: 1))
+                    .overlay(EmptyView(), alignment: .topTrailing)
+                    .offset(x: offset.x, y: offset.y)
+            )
+        } else {
+            return AnyView(EmptyView())
         }
     }
-    
-    deinit {
-        listener?.remove()
-    }
-    
-    func handleSignOut() {
-        isUserCurrentlyLoggedOut.toggle()
-        try? FirebaseManager.shared.auth.signOut()
-    }
-    
 }
 
 struct ChatListView_Preview: PreviewProvider {

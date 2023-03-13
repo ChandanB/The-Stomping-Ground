@@ -85,16 +85,29 @@ extension FirebaseManager {
     
     
     // MARK: Messaging
-    /// This function read our datas to firebase cloud storage
-    func createNewChat(withParticipants participants: [User], completion: @escaping (Result<Chat, Error>) -> Void) {
-        let chatName = participants.map { $0.name }.joined(separator: ", ")
-        let participantIds = participants.compactMap { $0.id }
-        
-        let chatDocument = firestore.collection(FirestoreConstants.chats).document()
-        let chatId = chatDocument.documentID
-        
+    /// These functions implement messaging
+    func createNewChat(withParticipants chatParticipants: [User], completion: @escaping (Result<Chat, Error>) -> Void) {
         fetchCurrentUser { user in
-            let chat = Chat(id: chatId, createdAt: Date(), name: chatName, participants: participantIds, lastMessage: "\(user.name) Started A New Chat", messages: [])
+            var participants = chatParticipants
+            participants.append(user)
+            let sortedParticipants = participants.sorted { $0.name.lowercased() < $1.name.lowercased() }
+            let chatName = sortedParticipants.map { $0.name }.joined(separator: ", ")
+            let participantIds = sortedParticipants.compactMap { $0.id }
+            
+            let chatDocument = firestore.collection(FirestoreConstants.chats).document()
+            let chatId = chatDocument.documentID
+            var seenBy: [String: Bool] = [:]
+            
+            for id in participantIds {
+                if id == user.uid {
+                    seenBy.updateValue(true, forKey: user.uid)
+                } else {
+                    seenBy.updateValue(false, forKey: id)
+                }
+            }
+            
+            let chat = Chat(id: chatId, createdAt: Date(), createdBy: user.uid, name: chatName, lastMessage: "\(user.name) Started A New Chat", chatImageUrl: "", participants: participantIds,  lastMessageTime: Date(), seenBy: seenBy)
+            
             do {
                 try chatDocument.setData(from: chat)
                 participantIds.forEach { participantId in
@@ -103,7 +116,7 @@ extension FirebaseManager {
                         .collection(FirestoreConstants.messages)
                         .document(chatId)
                     
-                    let recentMessage = ChatMessage(id: chatId,  fromId: user.uid, text: chatName, chatId: chatId, timestamp: Date(), seenBy: [user.uid : true])
+                    let recentMessage = createRecentMessage(forChat: chatId, fromUser: user, withText: chatName)
                     
                     do {
                         try participantRecentMessageDocument.setData(from: recentMessage)
@@ -120,6 +133,11 @@ extension FirebaseManager {
         }
     }
     
+    func createRecentMessage(forChat chatId: String, fromUser user: User, withText text: String) -> ChatMessage {
+        let timestamp = Date()
+        return ChatMessage(id: chatId, fromId: user.uid, text: text, chatId: chatId, timestamp: timestamp)
+    }
+    
     func fetchChatWithId(chatId: String, completion: @escaping (Chat?) -> Void) {
         FirestoreCollectionReferences.chats.document(chatId).getDocument { documentSnapshot, error in
             if let error = error {
@@ -132,11 +150,34 @@ extension FirebaseManager {
         }
     }
     
+    func fetchChats(forUserWithId userId: String, completion: @escaping (Result<[Chat], Error>) -> Void) {
+        FirestoreCollectionReferences.chats.whereField(FirestoreConstants.chatParticipants, arrayContains: userId).getDocuments { documentSnapshot, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            let chats = documentSnapshot?.documents.compactMap { document in
+                do {
+                    let chat = try document.data(as: Chat.self)
+                    return chat
+                } catch {
+                    print("Error decoding chat: \(error)")
+                    return nil
+                }
+            }
+            if let chats = chats {
+                completion(.success(chats))
+            } else {
+                completion(.success([]))
+            }
+        }
+    }
+    
     func fetchChatsForCurrentUser(completion: @escaping (Result<[Chat], Error>) -> Void) -> ListenerRegistration? {
         guard let uid = FirestoreConstants.currentUser?.uid else { return nil }
         let query = FirestoreCollectionReferences.chats
             .whereField(FirestoreConstants.chatParticipants, arrayContains: uid)
-            .order(by: "createdAt", descending: true)
+            .order(by: "lastMessageTime", descending: true)
         
         let listener = query.addSnapshotListener { querySnapshot, error in
             if let error = error {
@@ -169,21 +210,20 @@ extension FirebaseManager {
             return
         }
         let timestamp = Date().timeIntervalSince1970
+        let batch = firestore.batch()
         
         var message = ChatMessage(
             id: "\(currentUserID)_\(timestamp)",
             fromId: currentUserID,
             text: text,
             chatId: chatID,
-            timestamp: Date(),
-            seenBy: [currentUserID: true]
+            timestamp: Date()
         )
         
-        let messageCollection = firestore.collection(FirestoreConstants.chats)
+        let messageCollection = FirestoreCollectionReferences.chats
             .document(chatID)
             .collection(FirestoreConstants.messages)
         
-        let batch = firestore.batch()
         let messageDocument = messageCollection.document()
         let messageID = messageDocument.documentID
         message.id = messageID
@@ -210,16 +250,10 @@ extension FirebaseManager {
         // Update the lastMessage field of the Chat document
         let chatDocument = FirestoreCollectionReferences.chats.document(chatID)
         let lastMessage = text
+        let lastMessageTime = message.timestamp
         
-        batch.updateData([FirestoreConstants.lastMessage: lastMessage], forDocument: chatDocument)
-        
-        // Update the seenBy property of the message to false for all participants who have not seen it yet
-        for receiverID in receivers {
-            if receiverID != currentUserID {
-                message.seenBy[receiverID] = false
-            }
-        }
-        
+        batch.updateData([FirestoreConstants.lastMessage: lastMessage, FirestoreConstants.lastMessageTime: lastMessageTime], forDocument: chatDocument)
+                
         // Commit the batch
         batch.commit() { error in
             if let error = error {
@@ -228,70 +262,44 @@ extension FirebaseManager {
             }
             
             completion(nil)
+            
+            // Update the seenBy property of the message to false for all participants who have not seen it yet
+            fetchChatWithId(chatId: chatID) { chat in
+                guard let chat = chat else { return }
+                for receiverID in chat.participants {
+                    if receiverID != currentUserID {
+                        markChat(chat: chat, userId: receiverID, seen: false)
+                    }
+                }
+            }
         }
     }
     
-    func persistRecentMessage(chat: Chat, chatMessage: ChatMessage) {
-        let chatId = chat.id ?? ""
-        let chatParticipants = chat.participants
+    func getChatParticipants(chat: Chat, completion: @escaping (Result<[User], Error>) -> Void) {
+        let dispatchGroup = DispatchGroup()
+        var users: [User] = []
         
-        let batch = firestore.batch()
-        
-        // Update the recent message document for each participant in the chat
-        for participant in chatParticipants {
-            let participantDocument = FirestoreCollectionReferences.recentMessages
-                .document(participant)
-                .collection(FirestoreConstants.chats)
-                .document(chatId)
-            
-            var participantData = [
-                FirestoreConstants.timestamp: chatMessage.timestamp,
-                FirestoreConstants.text: chatMessage.text,
-                FirestoreConstants.fromId: chatMessage.fromId,
-                FirestoreConstants.chatId: chatId,
-            ] as [String: Any]
-            
-            // Fetch the user object for the participant
-            FirestoreCollectionReferences.users
-                .document(participant)
-                .getDocument { snapshot, error in
-                    if let error = error {
-                        print("Error fetching user: \(error.localizedDescription)")
-                        return
-                    }
-                    
-                    guard let data = snapshot?.data() else {
-                        print("Error getting user data.")
-                        return
-                    }
-                    
-                    // Extract the required fields from the user object
-                    let profileImageUrl = data[FirestoreConstants.profileImageUrl] as? String ?? ""
-                    let email = data[FirestoreConstants.email] as? String ?? ""
-                    let name = data[FirestoreConstants.name] as? String ?? ""
-                    let username = data[FirestoreConstants.username] as? String ?? ""
-                    
-                    // Add the fields to the participantData dictionary
-                    participantData[FirestoreConstants.profileImageUrl] = profileImageUrl
-                    participantData[FirestoreConstants.email] = email
-                    participantData[FirestoreConstants.name] = name
-                    participantData[FirestoreConstants.username] = username
-                    
-                    // Set the data in the batch
-                    batch.setData(participantData, forDocument: participantDocument)
-                }
+        for participantId in chat.participants {
+            dispatchGroup.enter()
+            fetchUser(withUID: participantId) { user in
+                users.append(user)
+                dispatchGroup.leave()
+            }
         }
         
-        // Update the lastMessage field of the Chat document
-        let chatDocument = FirestoreCollectionReferences.chats.document(chatId)
-        let lastMessage = chatMessage.text
-        
-        batch.updateData([FirestoreConstants.lastMessage: lastMessage], forDocument: chatDocument)
-        
-        // Commit the batch
-        batch.commit() { error in
-            if let error = error {
-                print("Failed to save recent message: \(error)")
+        dispatchGroup.notify(queue: .main) {
+            completion(.success(users))
+        }
+    }
+
+    func getMostRecentChatParticipants(chat: Chat, completion: @escaping (Result<[User], Error>) -> Void) {
+        guard let chatId = chat.id else { return }
+        fetchChatMessages(forChatWithID: chatId) { messages, error in
+            guard let mostRecentMessages = messages?.sorted(by: { $0.timestamp > $1.timestamp }).prefix(2) else { return }
+            let userIds = mostRecentMessages.map { $0.fromId }
+            
+            fetchUsers(withUserIds: userIds) { users in
+                completion(.success(users))
             }
         }
     }
@@ -325,20 +333,18 @@ extension FirebaseManager {
         return listener
     }
     
-    func markChatMessageAsSeen(message: ChatMessage, userId: String) {
-        guard let messageId = message.id else { return }
-        let chatId = message.chatId
-        var seenBy = message.seenBy
-        seenBy[userId] = true
+    func markChat(chat: Chat, userId: String, seen: Bool) {
+        guard let chatId = chat.id else { return }
+        var seenBy = chat.seenBy
+        seenBy[userId] = seen
         
         let chatRef = FirestoreCollectionReferences.chats.document(chatId)
-        let messageRef = chatRef.collection("messages").document(messageId)
         
-        messageRef.updateData([
+        chatRef.updateData([
             "seenBy": seenBy
         ]) { error in
             if let error = error {
-                print("Error marking message as seen: \(error)")
+                print("Error marking chat as seen: \(error)")
             }
         }
     }
@@ -365,7 +371,7 @@ extension FirebaseManager {
             }
         }
     }
-        
+    
     func createPost(post: Post, completion: @escaping (Error?) -> Void) {
         guard let userId = post.user.id else { return }
         
@@ -517,9 +523,71 @@ extension FirebaseManager {
         }
     }
     
-    func fetchAllUsers(includeCurrentUser: Bool = true, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
+    func fetchAllCampers(includeCurrentUser: Bool = true, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
+        var campersRef = FirestoreCollectionReferences.campers
+            .whereField("uid", isNotEqualTo: FirestoreConstants.currentUser?.uid as Any)
+        
+        if limit > 0 {
+            campersRef = campersRef.limit(to: limit)
+        }
+        
+        campersRef.getDocuments { documentsSnapshot, error in
+            if let error = error {
+                print("Failed to fetch users: \(error)")
+                return
+            }
+            
+            var users = [User]()
+            
+            documentsSnapshot?.documents.forEach({ snapshot in
+                guard let user = try? snapshot.data(as: User.self) else { return }
+                users.append(user)
+            })
+            
+            users.sort(by: { (user1, user2) -> Bool in
+                return user1.username.compare(user2.username) == .orderedAscending
+            })
+            
+            completion(users)
+        }
+    }
+    
+    func fetchAllCounselors(includeCurrentUser: Bool = true, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
+        var counselorsRef = FirestoreCollectionReferences.counselors
+            .whereField("uid", isNotEqualTo: FirestoreConstants.currentUser?.uid as Any)
+        
+        if limit > 0 {
+            counselorsRef = counselorsRef.limit(to: limit)
+        }
+        
+        counselorsRef.getDocuments { documentsSnapshot, error in
+            if let error = error {
+                print("Failed to fetch users: \(error)")
+                return
+            }
+            
+            var users = [User]()
+            
+            documentsSnapshot?.documents.forEach({ snapshot in
+                guard let user = try? snapshot.data(as: User.self) else { return }
+                users.append(user)
+            })
+            
+            users.sort(by: { (user1, user2) -> Bool in
+                return user1.username.compare(user2.username) == .orderedAscending
+            })
+            
+            completion(users)
+        }
+    }
+    
+    func fetchAllUsers(includeCurrentUser: Bool = true, userType: UserType?, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
         var usersRef = FirestoreCollectionReferences.users
             .whereField("uid", isNotEqualTo: FirestoreConstants.currentUser?.uid as Any)
+        
+        if let userType = userType {
+            usersRef = usersRef.whereField("userType", isEqualTo: userType.rawValue)
+        }
         
         if limit > 0 {
             usersRef = usersRef.limit(to: limit)
@@ -545,6 +613,27 @@ extension FirebaseManager {
             completion(users)
         }
     }
+    
+    func fetchActiveUsers(completion: @escaping ([User]) -> Void) {
+        let usersRef = FirestoreCollectionReferences.users
+        usersRef.whereField("status", isEqualTo: "online").getDocuments { (documentsSnapshot, error) in
+            if let error = error {
+                print("Error getting active users: \(error)")
+                return
+            }
+            
+            var activeUsers = [User]()
+                        
+            documentsSnapshot?.documents.forEach({ snapshot in
+                guard let user = try? snapshot.data(as: User.self) else { return }
+                activeUsers.append(user)
+            })
+            
+            completion(activeUsers)
+            
+        }
+    }
+    
     
     func fetchUserByUsername(username: String, completion: @escaping (User) -> Void) {
         FirestoreCollectionReferences.users

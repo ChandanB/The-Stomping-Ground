@@ -12,12 +12,18 @@ import FirebaseFirestoreSwift
 
 struct User: Codable, Identifiable {
     @DocumentID var id: String?
-    let uid, name, username, email, profileImageUrl: String
+    let uid, name, username, email, profileImageUrl, status: String
     var isFollowing, isEditable: Bool?
     var bio: String?
     var following, followers: [User]?
     var posts: [Post]?
-    var chats: [Chat]? 
+    var chats: [Chat]?
+    var userType: UserType?
+}
+
+enum UserType: String, Codable {
+    case camper
+    case counselor
 }
 
 extension User: Equatable {

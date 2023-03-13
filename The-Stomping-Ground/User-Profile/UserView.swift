@@ -25,6 +25,7 @@ class UserViewModel: ObservableObject {
     @Published var username: String = ""
     @Published var email: String = ""
     @Published var bio: String = ""
+    @Published var userType: UserType?
     @Published var profileImage: UIImage = (UIImage(named: "sg-logo") ?? UIImage())
     
     // MARK: - Profile Image
@@ -106,9 +107,9 @@ class UserViewModel: ObservableObject {
         }
         
         dispatchGroup.notify(queue: .main) {
-            let user = User(id: currentUser.uid, uid: currentUser.uid, name: self.username, username: self.username, email: currentUser.email, profileImageUrl: profileImageUrl)
+            let user = User(id: currentUser.uid, uid: currentUser.uid, name: self.username, username: self.username, email: currentUser.email, profileImageUrl: profileImageUrl, status: currentUser.status)
             
-            FirebaseManager.uploadUser(withUID: currentUser.uid, bio: self.bio, name: self.name, username: self.username, email: user.email) {
+            FirebaseManager.uploadUser(withUID: currentUser.uid, bio: self.bio, name: self.name, username: self.username, email: user.email, userType: self.userType ?? .camper) {
                 completion(.success(()))
             }
         }

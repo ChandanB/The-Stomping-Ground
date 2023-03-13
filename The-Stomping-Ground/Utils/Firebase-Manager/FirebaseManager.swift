@@ -12,7 +12,6 @@ import FirebaseFirestore
 import FirebaseFirestoreSwift
 
 struct FirebaseManager {
-    
     let auth: Auth
     let storage: Storage
     let firestore: Firestore

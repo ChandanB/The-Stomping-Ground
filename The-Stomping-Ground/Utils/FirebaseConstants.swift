@@ -19,21 +19,28 @@ struct FirestoreConstants {
     static let email = "email"
     static let uid = "uid"
     static let profileImageUrl = "profileImageUrl"
+    static let chatImageUrl = "profileImageUrl"
     static let messages = "messages"
     static let users = "users"
+    static let campers = "campers"
+    static let counselors = "counselors"
     static let posts = "posts"
     static let chats = "chats"
     static let chatId = "chatId"
     static let chatName = "chat-name"
     static let chatParticipants = "participants"
     static let lastMessage = "lastMessage"
+    static let lastMessageTime = "lastMessageTime"
     static let recentChats = "recent_chats"
     static let recentMessages = "recent_messages"
     static let createdAt = "createdAt"
+    static let seenBy = "seenBy"
+    static let userType = "userType"
     static let currentUser = Auth.auth().currentUser
 }
 
 struct StorageConstants {
+    static let storageChatImagesRef = Storage.storage().reference().child("chat_images")
     static let storageProfileImagesRef = Storage.storage().reference().child("profile_images")
     static let storageMessageImagesRef = Storage.storage().reference().child("message_images")
     static let storageMessageVideoRef = Storage.storage().reference().child("video_messages")
@@ -45,6 +52,8 @@ struct StorageConstants {
 struct FirestoreCollectionReferences {
     static let fire = FirebaseManager.shared.firestore
     static let users = fire.collection("users")
+    static let campers = fire.collection("campers")
+    static let counselors = fire.collection("counselors")
     static let homeFeed = fire.collection("home-feed")
     static let recentChats = fire.collection("recent_chats")
     static let recentMessages = fire.collection("recent_messages")

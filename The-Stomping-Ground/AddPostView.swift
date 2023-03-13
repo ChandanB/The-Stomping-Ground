@@ -34,7 +34,7 @@ struct AddPostView: View {
                 })
             }, trailingButton: {
                 AnyView(Button(action: {
-                    self.createPost(media: addPostViewModel.postMedia, caption: caption)
+                    self.createPost(image: addPostViewModel.postImage ?? UIImage(), caption: caption)
                 }) {
                     Text("Post")
                         .fontWeight(.bold)
@@ -68,17 +68,17 @@ struct AddPostView: View {
         }
     }
     
-    func createPost(media: Data?, caption: String) {
-        guard let mediaData = media else { return }
-        
-        let postMediaRef = StorageConstants.storagePostMediaRef.child(NSUUID().uuidString)
-        
-        postMediaRef.putData(mediaData) { metadata, err in
+    func createPost(image: UIImage, caption: String) {
+        guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
+
+        let postImageRef = StorageConstants.storagePostImagesRef.child(NSUUID().uuidString)
+
+        postImageRef.putData(imageData) { metadata, err in
             if let err = err {
                 print("Failed to upload profile image:", err)
                 return
             }
-            postMediaRef.downloadURL { url, err in
+            postImageRef.downloadURL { url, err in
                 if let err = err {
                     print("Failed to obtain download url", err)
                     return
@@ -104,7 +104,7 @@ struct AddPostView: View {
                     
                     // Add the new post to the Firestore database
                     do {
-                        try FirebaseManager.shared.firestore.collection("posts").document(postId).setData(from: newPost)
+                        try FirestoreCollectionReferences.posts.document(postId).setData(from: newPost)
                         print("Successfully created new post with ID: \(postId)")
                         self.showAlert.toggle()
                         self.alertTitle = "Success"

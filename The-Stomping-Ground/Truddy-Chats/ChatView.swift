@@ -29,6 +29,7 @@ class ChatViewModel: ObservableObject {
     }
     
     func fetchChatMessages() {
+        guard let chat = self.chat else { return }
         guard let chatId = self.chat?.id else { return }
         
         firestoreListener?.remove()
@@ -44,12 +45,10 @@ class ChatViewModel: ObservableObject {
             if let messages = messages {
                 self.chatMessages = messages
                 
-                // Mark all messages as seen by current user
-                self.chatMessages.forEach { message in
-                    if let currentUserID = self.currentUser?.uid {
-                        if !message.seenBy[currentUserID, default: false] {
-                            FirebaseManager.shared.markChatMessageAsSeen(message: message, userId: currentUserID)
-                        }
+                // Mark chat as seen by current user
+                if let currentUserID = self.currentUser?.uid {
+                    if !chat.seenBy[currentUserID, default: false] {
+                        FirebaseManager.shared.markChat(chat: chat, userId: currentUserID, seen: true)
                     }
                 }
             }

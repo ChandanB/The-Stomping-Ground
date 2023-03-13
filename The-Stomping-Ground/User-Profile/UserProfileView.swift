@@ -168,6 +168,6 @@ class UserProfileViewModel: ObservableObject {
 
 struct UserProfileView_Previews: PreviewProvider {
     static var previews: some View {
-        UserProfileView(user: User(id: "3", uid: "3", name: "User 3", username: "username3", email: "user3@example.com", profileImageUrl: "https://img.freepik.com/free-photo/model-cute-adult-portrait-urban_1139-817.jpg", isFollowing: true, isEditable: true, bio: "This is my Bio that really should be like 170 characters at least", following: [], followers: [], posts: []), viewModel: UserProfileViewModel(currentUserId: "1", userId: "3"))
+        UserProfileView(user: User(id: "3", uid: "3", name: "User 3", username: "username3", email: "user3@example.com", profileImageUrl: "https://img.freepik.com/free-photo/model-cute-adult-portrait-urban_1139-817.jpg", status: "online", isFollowing: true, isEditable: true, bio: "This is my Bio that really should be like 170 characters at least", following: [], followers: [], posts: []), viewModel: UserProfileViewModel(currentUserId: "1", userId: "3"))
     }
 }
