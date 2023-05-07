@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>fonts/AveriaSerifLibre-Bold.ttf</string>
+		<string>fonts/AveriaSerifLibre-BoldItalic.ttf</string>
+		<string>fonts/AveriaSerifLibre-Regular.ttf</string>
+		<string>fonts/Montserrat-VariableFont_wght.ttf</string>
+		<string>fonts/Montserrat-Italic-VariableFont_wght.ttf</string>
+		<string>fonts/AveriaSerifLibre-Light.ttf</string>
+		<string>fonts/AveriaSerifLibre-LightItalic.ttf</string>
+		<string>fonts/AveriaSerifLibre-Italic.ttf</string>
+		<string>fonts/Montserrat-Thin.ttf</string>
+		<string>fonts/Montserrat-ExtraLight.ttf</string>
+		<string>fonts/Montserrat-Light.ttf</string>
+		<string>fonts/Montserrat-Regular.ttf</string>
+		<string>fonts/Montserrat-Medium.ttf</string>
+		<string>fonts/Montserrat-SemiBold.ttf</string>
+		<string>fonts/Montserrat-Bold.ttf</string>
+		<string>fonts/Montserrat-ExtraBold.ttf</string>
+		<string>fonts/Montserrat-Black.ttf</string>
+		<string>fonts/Montserrat-ThinItalic.ttf</string>
+		<string>fonts/Montserrat-ExtraLightItalic.ttf</string>
+		<string>fonts/Montserrat-LightItalic.ttf</string>
+		<string>fonts/Montserrat-Italic.ttf</string>
+		<string>fonts/Montserrat-MediumItalic.ttf</string>
+		<string>fonts/Montserrat-SemiBoldItalic.ttf</string>
+		<string>fonts/Montserrat-BoldItalic.ttf</string>
+		<string>fonts/Montserrat-ExtraBoldItalic.ttf</string>
+		<string>fonts/Montserrat-BlackItalic.ttf</string>
+	</array>
+</dict>
+</plist>
