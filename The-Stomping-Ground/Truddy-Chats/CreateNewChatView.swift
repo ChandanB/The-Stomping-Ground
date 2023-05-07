@@ -18,26 +18,39 @@ class CreateNewChatViewModel: ObservableObject {
     
     init(selectedSegment: UserType = .camper) {
         self.selectedSegment = selectedSegment
-        fetchAllCampers()
-        fetchAllCounselors()
+        fetchAllUsers()
     }
     
-    func fetchAllCampers() {
-        FirebaseManager.shared.fetchAllCampers { users in
-            self.allCampers = users
-        } withCancel: { error in
-            print("Error fetching all campers: \(error)")
-        }
+    func fetchAllUsers() {
+        guard let currentUserId = FirestoreConstants.currentUser?.uid else { return }
+        
+        fetchUsers(fromCollection: FirestoreCollectionReferences.campers,
+                   excludeUserIds: [currentUserId],
+                   updateArray: { users in
+                       self.allCampers = users
+                   }, onError: { error in
+                       print("Error fetching all campers: \(error)")
+                   })
+        
+        fetchUsers(fromCollection: FirestoreCollectionReferences.counselors,
+                   excludeUserIds: [currentUserId],
+                   updateArray: { users in
+                       self.allCounselors = users
+                   }, onError: { error in
+                       print("Error fetching all counselors: \(error)")
+                   })
     }
-    
-    func fetchAllCounselors() {
-        FirebaseManager.shared.fetchAllCounselors { users in
-            self.allCounselors = users
-        } withCancel: { error in
-            print("Error fetching all counselors: \(error)")
-        }
+
+    private func fetchUsers(fromCollection collection: CollectionReference,
+                            excludeUserIds: [String],
+                            updateArray: @escaping ([User]) -> Void,
+                            onError: @escaping (Error) -> Void) {
+                
+        FirebaseManager.shared.fetchUsers(fromCollection: collection,
+                                          excludeUserIds: excludeUserIds,
+                                          completion: updateArray)
     }
-    
+
     func toggleSelectedUser(_ user: User) {
         if selectedUsers.contains(where: { $0 == user }) {
             deselectUser(user)
@@ -68,12 +81,14 @@ class CreateNewChatViewModel: ObservableObject {
     
     func createNewChat(completion: @escaping (Result<Chat, Error>) -> Void) {
         let selectedUserIds = selectedUsers.compactMap { $0.id }
-        FirebaseManager.shared.fetchUsers(withUserIds: selectedUserIds) { users in
+        FirebaseManager.shared.fetchUsers(withUIDs: selectedUserIds) { users in
             FirebaseManager.shared.createNewChat(withParticipants: users, completion: { result in
                 switch result {
                 case .success(let chat):
                     for userId in selectedUserIds {
-                        FirebaseManager.shared.markChat(chat: chat, userId: userId, seen: false)
+                        if userId == FirestoreConstants.currentUser?.uid {
+                            FirebaseManager.shared.markChat(chat: chat, userId: userId, seen: false)
+                        }
                     }
                     completion(.success(chat))
                 case .failure(let error):
@@ -198,7 +213,7 @@ struct CreateNewChatView: View {
                         switch result {
                         case .success(let chat):
                             self.isPresented = false
-                            //   self.didStartNewChat(chat)
+                            print("Successfully created chat: \(chat)")
                         case .failure(let error):
                             print("Error creating chat: \(error)")
                         }

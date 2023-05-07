@@ -19,6 +19,7 @@ struct Chat: Codable, Identifiable {
     var participants: [String]
     var lastMessageTime: Date
     var seenBy: [String: Bool]
+    var messages: [ChatMessage]?
 
     var timeAgo: String {
         let formatter = RelativeDateTimeFormatter()

@@ -9,81 +9,6 @@ import Firebase
 import SwiftUI
 
 extension FirebaseManager {
-    func fetchData<T: Decodable>(collection: String, dataType: T.Type, completion: @escaping (Result<[T], Error>) -> Void) {
-        firestore.collection(collection).getDocuments { snapshot, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            guard let snapshot = snapshot else {
-                completion(.failure(NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch data"])))
-                return
-            }
-            
-            let data = snapshot.documents.compactMap { document -> T? in
-                guard let jsonData = try? JSONSerialization.data(withJSONObject: document.data(), options: []) else { return nil }
-                return try? JSONDecoder().decode(T.self, from: jsonData)
-            }
-            
-            completion(.success(data))
-        }
-    }
-    
-    // MARK: Post services provider
-    /// This function saves our data to firebase cloud storage
-    /// The accuracy of the sent data must be checked before the service and the user must be informed.
-    func postWithCollectionReference(_ data: [String: Any]? = [:], reference: String, serviceType: ServiceType, result: @escaping(Result<Any?, FirebaseServiceResult>) -> Void) {
-        let collectionreference = self.firestore.collection(reference)
-        
-        DispatchQueue.main.async {
-            switch serviceType {
-            case .delete(let documentId):
-                collectionreference.document(documentId).delete { err in
-                    guard err == nil else { return result(.failure(.deleteError))}
-                    return result(.success("LOCAL_DELETE_SUCCESSFULLY"))
-                }
-                
-            case .update(let documentId):
-                collectionreference.document(documentId).updateData(data!) { err in
-                    guard err == nil else { return result(.failure(.updateError))}
-                    return result(.success("LOCAL_UPDATE_SUCCESSFULLY"))
-                }
-                
-            case .save(let documentId):
-                collectionreference.document(documentId).setData(data!) { err in
-                    guard err == nil else { return result(.failure(.saveError))}
-                    return result(.success("LOCAL_SAVE_SUCCESSFULLY"))
-                }
-            }
-        }
-    }
-    
-    // MARK: Get services provider
-    /// These function read our datas to firebase cloud storage
-    func fetchWithCollectionReference(reference: String, documentId: String, result: @escaping (Result<Data?, FirebaseServiceResult>) -> Void) {
-        let collectionreference = self.firestore.collection(reference).document(documentId)
-        
-        DispatchQueue.main.async {
-            collectionreference.getDocument { snapshot, err in
-                guard err == nil else {
-                    result(.failure(.loadError))
-                    return
-                }
-                guard let snapshot = snapshot?.data() else {
-                    result(.failure(.documentNotFound))
-                    return
-                }
-                guard let data = try? JSONSerialization.data(withJSONObject: snapshot, options: .prettyPrinted) else {
-                    result(.failure(.parseError))
-                    return
-                }
-                result(.success(data))
-            }
-        }
-    }
-    
-    
     // MARK: Messaging
     /// These functions implement messaging
     func createNewChat(withParticipants chatParticipants: [User], completion: @escaping (Result<Chat, Error>) -> Void) {
@@ -94,7 +19,7 @@ extension FirebaseManager {
             let chatName = sortedParticipants.map { $0.name }.joined(separator: ", ")
             let participantIds = sortedParticipants.compactMap { $0.id }
             
-            let chatDocument = firestore.collection(FirestoreConstants.chats).document()
+            let chatDocument = FirestoreCollectionReferences.chats.document()
             let chatId = chatDocument.documentID
             var seenBy: [String: Bool] = [:]
             
@@ -131,77 +56,6 @@ extension FirebaseManager {
                 completion(.failure(error))
             }
         }
-    }
-    
-    func createRecentMessage(forChat chatId: String, fromUser user: User, withText text: String) -> ChatMessage {
-        let timestamp = Date()
-        return ChatMessage(id: chatId, fromId: user.uid, text: text, chatId: chatId, timestamp: timestamp)
-    }
-    
-    func fetchChatWithId(chatId: String, completion: @escaping (Chat?) -> Void) {
-        FirestoreCollectionReferences.chats.document(chatId).getDocument { documentSnapshot, error in
-            if let error = error {
-                print("Failed to fetch chat: \(error)")
-                completion(nil)
-                return
-            }
-            guard let chat = try? documentSnapshot?.data(as: Chat.self) else { return }
-            completion(chat)
-        }
-    }
-    
-    func fetchChats(forUserWithId userId: String, completion: @escaping (Result<[Chat], Error>) -> Void) {
-        FirestoreCollectionReferences.chats.whereField(FirestoreConstants.chatParticipants, arrayContains: userId).getDocuments { documentSnapshot, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            let chats = documentSnapshot?.documents.compactMap { document in
-                do {
-                    let chat = try document.data(as: Chat.self)
-                    return chat
-                } catch {
-                    print("Error decoding chat: \(error)")
-                    return nil
-                }
-            }
-            if let chats = chats {
-                completion(.success(chats))
-            } else {
-                completion(.success([]))
-            }
-        }
-    }
-    
-    func fetchChatsForCurrentUser(completion: @escaping (Result<[Chat], Error>) -> Void) -> ListenerRegistration? {
-        guard let uid = FirestoreConstants.currentUser?.uid else { return nil }
-        let query = FirestoreCollectionReferences.chats
-            .whereField(FirestoreConstants.chatParticipants, arrayContains: uid)
-            .order(by: "lastMessageTime", descending: true)
-        
-        let listener = query.addSnapshotListener { querySnapshot, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            let chats = querySnapshot?.documents.compactMap { document in
-                do {
-                    let chat = try document.data(as: Chat.self)
-                    return chat
-                } catch {
-                    print("Error decoding chat: \(error)")
-                    return nil
-                }
-            }
-            
-            if let chats = chats {
-                completion(.success(chats))
-            } else {
-                completion(.success([]))
-            }
-        }
-        
-        return listener
     }
     
     func sendMessageToChat(text: String, toChatWithID chatID: String, toReceivers receivers: [String], completion: @escaping (Error?) -> Void) {
@@ -253,7 +107,7 @@ extension FirebaseManager {
         let lastMessageTime = message.timestamp
         
         batch.updateData([FirestoreConstants.lastMessage: lastMessage, FirestoreConstants.lastMessageTime: lastMessageTime], forDocument: chatDocument)
-                
+        
         // Commit the batch
         batch.commit() { error in
             if let error = error {
@@ -263,74 +117,148 @@ extension FirebaseManager {
             
             completion(nil)
             
-            // Update the seenBy property of the message to false for all participants who have not seen it yet
             fetchChatWithId(chatId: chatID) { chat in
                 guard let chat = chat else { return }
                 for receiverID in chat.participants {
                     if receiverID != currentUserID {
                         markChat(chat: chat, userId: receiverID, seen: false)
+                    } else {
+                        markChat(chat: chat, userId: receiverID, seen: true)
                     }
                 }
             }
         }
     }
     
-    func getChatParticipants(chat: Chat, completion: @escaping (Result<[User], Error>) -> Void) {
-        let dispatchGroup = DispatchGroup()
-        var users: [User] = []
+    func createRecentMessage(forChat chatId: String, fromUser user: User, withText text: String) -> ChatMessage {
+        let timestamp = Date()
+        return ChatMessage(id: chatId, fromId: user.uid, text: text, chatId: chatId, timestamp: timestamp)
+    }
+    
+    func fetchChatsForUser(uid: String? = FirestoreConstants.currentUser?.uid, completion: @escaping (Result<[Chat], Error>) -> Void) -> ListenerRegistration? {
+        let query = FirestoreCollectionReferences.chats
+            .whereField(FirestoreConstants.chatParticipants, arrayContains: uid ?? "")
+            .order(by: "lastMessageTime", descending: true)
         
-        for participantId in chat.participants {
-            dispatchGroup.enter()
-            fetchUser(withUID: participantId) { user in
-                users.append(user)
-                dispatchGroup.leave()
+        let listener = query.addSnapshotListener { querySnapshot, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            let chats = querySnapshot?.documents.compactMap { document in
+                do {
+                    let chat = try document.data(as: Chat.self)
+                    return chat
+                } catch {
+                    print("Error decoding chat: \(error)")
+                    return nil
+                }
+            }
+            
+            if let chats = chats {
+                completion(.success(chats))
+            } else {
+                completion(.success([]))
             }
         }
         
-        dispatchGroup.notify(queue: .main) {
-            completion(.success(users))
+        return listener
+    }
+    
+    func fetchChatWithId(chatId: String, completion: @escaping (Chat?) -> Void) {
+        FirestoreCollectionReferences.chats.document(chatId).getDocument { documentSnapshot, error in
+            if let error = error {
+                print("Failed to fetch chat: \(error)")
+                completion(nil)
+                return
+            }
+            guard let chat = try? documentSnapshot?.data(as: Chat.self) else { return }
+            completion(chat)
         }
     }
-
-    func getMostRecentChatParticipants(chat: Chat, completion: @escaping (Result<[User], Error>) -> Void) {
-        guard let chatId = chat.id else { return }
-        fetchChatMessages(forChatWithID: chatId) { messages, error in
-            guard let mostRecentMessages = messages?.sorted(by: { $0.timestamp > $1.timestamp }).prefix(2) else { return }
-            let userIds = mostRecentMessages.map { $0.fromId }
-            
-            fetchUsers(withUserIds: userIds) { users in
-                completion(.success(users))
-            }
+    
+    func fetchChatParticipants(chat: Chat, excludedUID: String? = nil, completion: @escaping (Result<[User], Error>) -> Void) {
+        let participantUIDs = chat.participants.filter { $0 != excludedUID }
+        
+        fetchUsers(withUIDs: participantUIDs) { users in
+            completion(.success(users))
         }
     }
     
     func fetchChatMessages(forChatWithID chatID: String, completion: @escaping ([ChatMessage]?, Error?) -> Void) -> ListenerRegistration? {
+        
         let messagesCollectionRef = FirestoreCollectionReferences.chats
             .document(chatID)
             .collection(FirestoreConstants.messages)
         
-        let listener = messagesCollectionRef
-            .order(by: FirestoreConstants.timestamp)
-            .addSnapshotListener { querySnapshot, error in
-                if let error = error {
-                    completion(nil, error)
-                    return
-                }
-                
-                var chatMessages = [ChatMessage]()
-                
-                for document in querySnapshot?.documents ?? [] {
-                    do {
-                        let cm = try document.data(as: ChatMessage.self)
-                        chatMessages.append(cm)
-                    } catch {
-                        print(error)
-                    }
-                }
-                
-                completion(chatMessages, nil)
+        let query = messagesCollectionRef.order(by: FirestoreConstants.timestamp)
+        
+        let listener = query.addSnapshotListener { querySnapshot, error in
+            if let error = error {
+                completion(nil, error)
+                return
             }
+            
+            var chatMessages = [ChatMessage]()
+            
+            for document in querySnapshot?.documents ?? [] {
+                do {
+                    let cm = try document.data(as: ChatMessage.self)
+                    chatMessages.append(cm)
+                } catch {
+                    print(error)
+                }
+            }
+            
+            completion(chatMessages, nil)
+        }
+        
         return listener
+    }
+    
+    func fetchMessageWithId(messageId: String, chatId: String, completion: @escaping (Result<ChatMessage, Error>) -> Void) {
+        let messageRef = FirestoreCollectionReferences.chats.document(chatId).collection(FirestoreConstants.messages).document(messageId)
+        
+        messageRef.getDocument { document, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            guard let document = document, document.exists else {
+                completion(.failure(NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Message not found"])))
+                return
+            }
+            do {
+                let message = try document.data(as: ChatMessage.self)
+                completion(.success(message))
+            } catch {
+                print("Error decoding message: \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func deleteChat(chat: Chat, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let chatId = chat.id else {
+            completion(.failure(NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Chat ID not available"])))
+            return
+        }
+        
+        let chatDocument = FirestoreCollectionReferences.chats.document(chatId)
+        chatDocument.delete() { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                chat.participants.forEach { participantId in
+                    let participantRecentMessageDocument = FirestoreCollectionReferences.recentChats
+                        .document(participantId)
+                        .collection(FirestoreConstants.messages)
+                        .document(chatId)
+                    participantRecentMessageDocument.delete()
+                }
+                completion(.success(()))
+            }
+        }
     }
     
     func markChat(chat: Chat, userId: String, seen: Bool) {
@@ -349,62 +277,89 @@ extension FirebaseManager {
         }
     }
     
-    func deleteChat(chat: Chat, completion: @escaping (Result<Void, Error>) -> Void) {
+    func updateChat(chat: Chat, completion: @escaping (Result<Void, Error>) -> Void) {
         guard let chatId = chat.id else {
             completion(.failure(NSError(domain: "", code: 0, userInfo: [NSLocalizedDescriptionKey: "Chat ID not available"])))
             return
         }
         
-        let chatDocument = firestore.collection(FirestoreConstants.chats).document(chatId)
-        chatDocument.delete() { error in
-            if let error = error {
-                completion(.failure(error))
-            } else {
-                chat.participants.forEach { participantId in
-                    let participantRecentMessageDocument = FirestoreCollectionReferences.recentChats
-                        .document(participantId)
-                        .collection(FirestoreConstants.messages)
-                        .document(chatId)
-                    participantRecentMessageDocument.delete()
+        let chatDocument = FirestoreCollectionReferences.chats.document(chatId)
+        
+        do {
+            try chatDocument.setData(from: chat, merge: true) { error in
+                if let error = error {
+                    completion(.failure(error))
+                } else {
+                    completion(.success(()))
                 }
-                completion(.success(()))
             }
+        } catch {
+            print("Error updating chat: \(error)")
+            completion(.failure(error))
         }
     }
     
-    func createPost(post: Post, completion: @escaping (Error?) -> Void) {
-        guard let userId = post.user.id else { return }
-        
-        // Create a new document reference for the post
-        let postRef = FirestoreCollectionReferences.users.document(userId).collection("posts").document()
-        
-        // Create a dictionary representation of the post
-        let postData: [String: Any] = [
-            "id": postRef.documentID,
-            "numLikes": post.numLikes,
-            "caption": post.caption,
-            "timestamp": post.timestamp,
-            "postComments": post.postComments ?? [],
-            "postIsVideo": post.postIsVideo ?? false,
-            "hasLiked": post.hasLiked ?? false,
-            "postMedia": post.postMedia ?? ""
-        ]
-        
-        // Save the post data to Firestore
-        postRef.setData(postData) { error in
-            if let error = error {
-                completion(error)
+    func createPost(media: [UIImage], mediaType: MediaType, caption: String, completion: @escaping (Result<Post, Error>) -> Void) {
+        fetchCurrentUser { user in
+            if media.isEmpty {
+                self.createPostWithMedia(user: user, caption: caption, mediaType: .text, images: [], completion: completion)
                 return
             }
             
-            // Update the user's post count
-            FirestoreCollectionReferences.users.document(userId).updateData(["postCount": FieldValue.increment(Int64(1))])
+            let dispatchGroup = DispatchGroup()
+            var postImages: [PostImage] = []
             
-            completion(nil)
+            for image in media {
+                dispatchGroup.enter()
+                let postImageId = NSUUID().uuidString
+                let postImageAspectRatio = image.size.width / image.size.height
+                FirebaseManager.uploadPostImage(image: image, filename: postImageId) { postImageUrl in
+                    let postImage = PostImage(id: postImageId, url: postImageUrl, aspectRatio: postImageAspectRatio)
+                    postImages.append(postImage)
+                    dispatchGroup.leave()
+                }
+            }
+            
+            dispatchGroup.notify(queue: .main) {
+                self.createPostWithMedia(user: user, caption: caption, mediaType: mediaType, images: postImages) { result in
+                    switch result {
+                    case .success:
+                        print("All images have been uploaded.")
+                    case .failure:
+                        print("Failed to upload images")
+                    }
+                }
+            }
         }
     }
     
-    func fetchPosts(userId: String, completion: @escaping ([Post]?, Error?) -> Void) {
+    private func createPostWithMedia(user: User, caption: String, mediaType: MediaType, images: [PostImage], completion: @escaping (Result<Post, Error>) -> Void) {
+        let newPost = Post(
+            id: nil,
+            numLikes: 0,
+            caption: caption,
+            user: user,
+            timestamp: Date(),
+            postComments: [],
+            postIsVideo: mediaType == .video,
+            hasLiked: false,
+            mediaType: mediaType,
+            postImages: images,
+            postVideo: nil
+        )
+        
+        let postId = UUID().uuidString
+        
+        do {
+            try FirestoreCollectionReferences.posts.document(postId).setData(from: newPost)
+            print("Successfully created new post with ID: \(postId)")
+            completion(.success(newPost))
+        } catch {
+            completion(.failure(error))
+        }
+    }
+    
+    func fetchPostsForUser(userId: String, completion: @escaping ([Post]?, Error?) -> Void) {
         FirestoreCollectionReferences.posts
             .whereField("userId", isEqualTo: userId)
             .order(by: "timestamp", descending: true)
@@ -432,8 +387,11 @@ extension FirebaseManager {
             })
     }
     
-    func fetchHomeFeed(completion: @escaping ([Post]) -> Void) {
-        FirestoreCollectionReferences.homeFeed.getDocuments { snapshot, error in
+    func fetchHomeFeed(completion: @escaping ([Post]) -> Void) -> ListenerRegistration? {
+        let query: Query = FirestoreCollectionReferences.posts
+            .order(by: FirestoreConstants.timestamp, descending: true)
+        
+        let listener = query.addSnapshotListener { snapshot, error in
             if let error = error {
                 print("Error fetching home feed: \(error.localizedDescription)")
                 completion([])
@@ -450,6 +408,7 @@ extension FirebaseManager {
             }
             completion(posts)
         }
+        return listener
     }
     
     static func uploadPostImage(image: UIImage, filename: String, completion: @escaping (String) -> Void) {
@@ -474,6 +433,74 @@ extension FirebaseManager {
         }
     }
     
+    func sendComment(postID: String, text: String, completion: @escaping (Error?) -> Void) {
+        
+        let timestamp = Date().timeIntervalSince1970
+        let batch = firestore.batch()
+        
+        fetchCurrentUser { user in
+            var comment = Comment(
+                id: "\(user.uid)_\(timestamp)",
+                postId: postID,
+                user: user,
+                text: text,
+                timestamp: Date()
+            )
+            
+            let commentCollection = FirestoreCollectionReferences.posts
+                .document(postID)
+                .collection(FirestoreConstants.postComments)
+            
+            let commentDocument = commentCollection.document()
+            let commentID = commentDocument.documentID
+            comment.id = commentID
+            
+            do {
+                try batch.setData(from: comment, forDocument: commentDocument)
+            } catch {
+                completion(error)
+                return
+            }
+            
+            // Commit the batch
+            batch.commit() { error in
+                if let error = error {
+                    completion(error)
+                    return
+                }
+                
+                completion(nil)
+            }
+        }
+    }
+    
+    func fetchComments(for postId: String, completion: @escaping ([Comment]?, Error?) -> Void) -> ListenerRegistration? {
+        let commentsRef = FirestoreCollectionReferences.posts.document(postId).collection(FirestoreConstants.postComments)
+        let query = commentsRef.order(by: "timestamp")
+        
+        let listener = query.addSnapshotListener { querySnapshot, error in
+            if let error = error {
+                completion(nil, error)
+                return
+            }
+            
+            var postComments = [Comment]()
+            
+            for document in querySnapshot?.documents ?? [] {
+                do {
+                    let coment = try document.data(as: Comment.self)
+                    postComments.append(coment)
+                } catch {
+                    print(error)
+                }
+            }
+            
+            completion(postComments, nil)
+        }
+        
+        return listener
+    }
+    
     // MARK: - User Functions
     // MARK: Users
     func fetchCurrentUser(completion: @escaping (User) -> Void) {
@@ -494,106 +521,53 @@ extension FirebaseManager {
             }
     }
     
-    func fetchUser(withUID uid: String, completion: @escaping (User) -> Void) {
-        FirestoreCollectionReferences.users.document(uid)
-            .getDocument(completion: { snapshot, error in
-                if let error = error {
-                    print("Failed to fetch user: \(error)")
-                    return
+    func fetchUser(withId userId: String, completion: @escaping (Result<User, Error>) -> Void) {
+        let userDocument = FirestoreCollectionReferences.users.document(userId)
+        
+        userDocument.getDocument { (document, error) in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                if let document = document, document.exists {
+                    do {
+                        let user = try document.data(as: User.self)
+                        completion(.success(user))
+                    } catch {
+                        completion(.failure(error))
+                    }
+                } else {
+                    completion(.failure(NSError(domain: "user_not_found", code: -1, userInfo: nil)))
                 }
-                guard let user = try? snapshot?.data(as: User.self) else { return }
-                completion(user)
-            })
-    }
-    
-    func fetchUsers(withUserIds userIds: [String], completion: @escaping ([User]) -> Void) {
-        let dispatchGroup = DispatchGroup()
-        var users = [User]()
-        
-        for userId in userIds {
-            dispatchGroup.enter()
-            fetchUser(withUID: userId) { user in
-                users.append(user)
-                dispatchGroup.leave()
             }
         }
-        
-        dispatchGroup.notify(queue: .main) {
-            completion(users)
-        }
     }
     
-    func fetchAllCampers(includeCurrentUser: Bool = true, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
-        var campersRef = FirestoreCollectionReferences.campers
-            .whereField("uid", isNotEqualTo: FirestoreConstants.currentUser?.uid as Any)
-        
-        if limit > 0 {
-            campersRef = campersRef.limit(to: limit)
-        }
-        
-        campersRef.getDocuments { documentsSnapshot, error in
-            if let error = error {
-                print("Failed to fetch users: \(error)")
-                return
-            }
-            
-            var users = [User]()
-            
-            documentsSnapshot?.documents.forEach({ snapshot in
-                guard let user = try? snapshot.data(as: User.self) else { return }
-                users.append(user)
-            })
-            
-            users.sort(by: { (user1, user2) -> Bool in
-                return user1.username.compare(user2.username) == .orderedAscending
-            })
-            
-            completion(users)
-        }
-    }
     
-    func fetchAllCounselors(includeCurrentUser: Bool = true, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
-        var counselorsRef = FirestoreCollectionReferences.counselors
-            .whereField("uid", isNotEqualTo: FirestoreConstants.currentUser?.uid as Any)
+    func fetchUsers(fromCollection collection: CollectionReference? = nil, withUIDs uids: [String]? = nil, userType: UserType? = nil, includeCurrentUser: Bool = true, limit: Int = 100, excludeUserIds: [String]? = nil, completion: @escaping ([User]) -> Void) {
         
-        if limit > 0 {
-            counselorsRef = counselorsRef.limit(to: limit)
-        }
-        
-        counselorsRef.getDocuments { documentsSnapshot, error in
-            if let error = error {
-                print("Failed to fetch users: \(error)")
-                return
-            }
-            
-            var users = [User]()
-            
-            documentsSnapshot?.documents.forEach({ snapshot in
-                guard let user = try? snapshot.data(as: User.self) else { return }
-                users.append(user)
-            })
-            
-            users.sort(by: { (user1, user2) -> Bool in
-                return user1.username.compare(user2.username) == .orderedAscending
-            })
-            
-            completion(users)
-        }
-    }
-    
-    func fetchAllUsers(includeCurrentUser: Bool = true, userType: UserType?, limit: Int = 100, completion: @escaping ([User]) -> Void, withCancel cancel: ((Error) -> Void)?) {
-        var usersRef = FirestoreCollectionReferences.users
-            .whereField("uid", isNotEqualTo: FirestoreConstants.currentUser?.uid as Any)
+        var usersQuery: Query = collection ?? FirestoreCollectionReferences.users
         
         if let userType = userType {
-            usersRef = usersRef.whereField("userType", isEqualTo: userType.rawValue)
+            usersQuery = usersQuery.whereField("userType", isEqualTo: userType.rawValue)
+        }
+        
+        if !includeCurrentUser, let currentUserId = FirestoreConstants.currentUser?.uid {
+            usersQuery = usersQuery.whereField("uid", isNotEqualTo: currentUserId)
+        }
+        
+        if let excludeUserIds = excludeUserIds {
+            usersQuery = usersQuery.whereField("uid", notIn: excludeUserIds)
+        }
+        
+        if let uids = uids {
+            usersQuery = usersQuery.whereField("uid", in: uids)
         }
         
         if limit > 0 {
-            usersRef = usersRef.limit(to: limit)
+            usersQuery = usersQuery.limit(to: limit)
         }
         
-        usersRef.getDocuments { documentsSnapshot, error in
+        usersQuery.getDocuments { snapshot, error in
             if let error = error {
                 print("Failed to fetch users: \(error)")
                 return
@@ -601,7 +575,7 @@ extension FirebaseManager {
             
             var users = [User]()
             
-            documentsSnapshot?.documents.forEach({ snapshot in
+            snapshot?.documents.forEach({ snapshot in
                 guard let user = try? snapshot.data(as: User.self) else { return }
                 users.append(user)
             })
@@ -623,7 +597,7 @@ extension FirebaseManager {
             }
             
             var activeUsers = [User]()
-                        
+            
             documentsSnapshot?.documents.forEach({ snapshot in
                 guard let user = try? snapshot.data(as: User.self) else { return }
                 activeUsers.append(user)
@@ -662,14 +636,14 @@ extension FirebaseManager {
                 var followers = [User]()
                 if let followerData = documentSnapshot?.data() {
                     let group = DispatchGroup()
-                    for (_, value) in followerData {
-                        guard let followerUID = value as? String else { continue }
-                        group.enter()
-                        fetchUser(withUID: followerUID) { follower in
-                            followers.append(follower)
-                            group.leave()
-                        }
+                    let followerUIDs = Array(followerData.values.compactMap { $0 as? String })
+                    
+                    group.enter()
+                    fetchUsers(withUIDs: followerUIDs) { fetchedFollowers in
+                        followers = fetchedFollowers
+                        group.leave()
                     }
+                    
                     group.notify(queue: .main) {
                         completion(followers)
                     }
@@ -678,6 +652,7 @@ extension FirebaseManager {
                 }
             }
     }
+    
     
     func fetchFollowing(userId: String, completion: @escaping ([User]) -> Void) {
         FirestoreCollectionReferences.userFollowing
@@ -689,16 +664,16 @@ extension FirebaseManager {
                 }
                 var following = [User]()
                 if let followingData = documentSnapshot?.data() {
-                    let dispatchGroup = DispatchGroup()
-                    for (_, value) in followingData {
-                        guard let followingUID = value as? String else { continue }
-                        dispatchGroup.enter()
-                        fetchUser(withUID: followingUID) { followingUser in
-                            following.append(followingUser)
-                            dispatchGroup.leave()
-                        }
+                    let group = DispatchGroup()
+                    let followingUIDs = Array(followingData.values.compactMap { $0 as? String })
+                    
+                    group.enter()
+                    fetchUsers(withUIDs: followingUIDs) { fetchedFollowing in
+                        following = fetchedFollowing
+                        group.leave()
                     }
-                    dispatchGroup.notify(queue: .main) {
+                    
+                    group.notify(queue: .main) {
                         completion(following)
                     }
                 }

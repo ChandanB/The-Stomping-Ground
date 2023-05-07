@@ -13,28 +13,32 @@ struct EditProfileView: View {
     @ObservedObject private var viewModel = UserViewModel()
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                EditProfileForm(viewModel: viewModel)
-                
-                Button {
-                    self.viewModel.updateProfile { error in
-                        
+        if #available(iOS 16.0, *) {
+            NavigationStack {
+                VStack(spacing: 16) {
+                    EditProfileForm(viewModel: viewModel)
+                    
+                    Button {
+                        self.viewModel.updateProfile { error in
+                            
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Save Changes")
+                                .foregroundColor(.white)
+                                .padding(.vertical, 10)
+                                .font(.system(size: 14, weight: .semibold))
+                            Spacer()
+                        }
+                        .background(Color.blue)
                     }
-                } label: {
-                    HStack {
-                        Spacer()
-                        Text("Save Changes")
-                            .foregroundColor(.white)
-                            .padding(.vertical, 10)
-                            .font(.system(size: 14, weight: .semibold))
-                        Spacer()
-                    }
-                    .background(Color.blue)
                 }
+                .padding()
+                .navigationTitle("Edit Profile")
             }
-            .padding()
-            .navigationTitle("Edit Profile")
+        } else {
+            // Fallback on earlier versions
         }
     }
 }

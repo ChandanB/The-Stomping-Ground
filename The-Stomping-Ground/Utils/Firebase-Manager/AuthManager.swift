@@ -32,7 +32,7 @@ extension FirebaseManager {
                 return
             }
             FirebaseManager.uploadUserProfileImage(image: image) { (profileImageUrl) in
-                FirebaseManager.uploadUser(withUID: uid, bio: bio, name: name, username: username, email: email, profileImageUrl: profileImageUrl, userType: userType) {
+                FirebaseManager.uploadUser(withUID: uid, bio: bio, name: name, status: "online", username: username, email: email, profileImageUrl: profileImageUrl, userType: userType) {
                     onSuccess()
                     return
                 }
@@ -40,9 +40,10 @@ extension FirebaseManager {
         })
     }
 
-    static func uploadUser(withUID uid: String, bio: String, name: String, username: String, email: String, profileImageUrl: String? = nil, userType: UserType, completion: @escaping (() -> Void)) {
+    static func uploadUser(withUID uid: String, bio: String, name: String, status: String, username: String, email: String, profileImageUrl: String? = nil, userType: UserType, completion: @escaping (() -> Void)) {
         let userData = [
             FirestoreConstants.uid: uid,
+            FirestoreConstants.userStatus: status,
             FirestoreConstants.name: name,
             FirestoreConstants.username: username,
             FirestoreConstants.email: email,
@@ -59,7 +60,8 @@ extension FirebaseManager {
                 completion()
             }
         
-        if userType.rawValue == "camper" {
+        switch userType {
+        case .camper:
             FirestoreCollectionReferences.campers
                 .document(uid).setData(userData as [String : Any]) { err in
                     if let err = err {
@@ -68,7 +70,7 @@ extension FirebaseManager {
                     }
                     completion()
                 }
-        } else {
+        case .counselor:
             FirestoreCollectionReferences.counselors
                 .document(uid).setData(userData as [String : Any]) { err in
                     if let err = err {
@@ -77,9 +79,27 @@ extension FirebaseManager {
                     }
                     completion()
                 }
+        case .parent:
+            FirestoreCollectionReferences.parents
+                .document(uid).setData(userData as [String : Any]) { err in
+                    if let err = err {
+                        print("Failed to upload user to database:", err)
+                        return
+                    }
+                    completion()
+                }
+        case .donor:
+            FirestoreCollectionReferences.donors
+                .document(uid).setData(userData as [String : Any]) { err in
+                    if let err = err {
+                        print("Failed to upload user to database:", err)
+                        return
+                    }
+                    completion()
+                }
         }
-        
     }
+
     
     static func uploadUserProfileImage(image: UIImage, completion: @escaping (String) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.5) else { return }

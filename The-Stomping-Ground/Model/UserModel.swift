@@ -24,6 +24,8 @@ struct User: Codable, Identifiable {
 enum UserType: String, Codable {
     case camper
     case counselor
+    case parent
+    case donor
 }
 
 extension User: Equatable {

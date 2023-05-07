@@ -8,137 +8,8 @@
 import SwiftUI
 import Firebase
 import PhotosUI
-
-struct AddPostView: View {
-    
-    @State private var showAlert: Bool = false
-    @State private var alertTitle: String = ""
-    @State private var alertMessage: String = ""
-    
-    @State private var imageURL: URL?
-    @State private var caption: String = ""
-    @State private var errorMessage: String = ""
-    
-    @ObservedObject private var addPostViewModel = AddPostViewModel()
-    
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        VStack {
-            CustomNavigationBar(leadingButton: {
-                AnyView(Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 25))
-                })
-            }, trailingButton: {
-                AnyView(Button(action: {
-                    self.createPost(image: addPostViewModel.postImage ?? UIImage(), caption: caption)
-                }) {
-                    Text("Post")
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal)
-                        .padding(.vertical, 10)
-                        .background(Color.blue)
-                        .cornerRadius(10)
-                })
-            })
-            
-            PhotosPicker(selection: $addPostViewModel.imageSelection,
-                         matching: .images,
-                         photoLibrary: .shared()) {
-                PostImageView(imageState: addPostViewModel.imageState)
-            } .buttonStyle(.borderless)
-            
-            Form {
-                Section(header: Text("What's on your mind?")) {
-                    TextEditor(text: $caption)
-                                        .frame(minHeight: 100)
-                                        .padding(.vertical)
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.black)
-                                        .background(Color.white)
-                                }
-            }
-        }
-        .alert(isPresented: $showAlert) {
-            Alert(title: Text(self.alertTitle), message: Text(self.alertMessage), dismissButton: .default(Text("Ok")))
-        }
-    }
-    
-    func createPost(image: UIImage, caption: String) {
-        guard let imageData = image.jpegData(compressionQuality: 0.75) else { return }
-
-        let postImageRef = StorageConstants.storagePostImagesRef.child(NSUUID().uuidString)
-
-        postImageRef.putData(imageData) { metadata, err in
-            if let err = err {
-                print("Failed to upload profile image:", err)
-                return
-            }
-            postImageRef.downloadURL { url, err in
-                if let err = err {
-                    print("Failed to obtain download url", err)
-                    return
-                }
-                guard let url = url?.absoluteString else { return }
-                
-                FirebaseManager.shared.fetchCurrentUser { user in
-                    // Create a new Post object using the provided parameters
-                    let newPost = Post(
-                        id: nil,
-                        numLikes: 0,
-                        caption: caption,
-                        user: user,
-                        timestamp: Date(),
-                        postComments: [],
-                        postIsVideo: addPostViewModel.imageSelection?.supportedContentTypes.contains(.movie) ?? false,
-                        hasLiked: false,
-                        postMedia: url
-                       )
-                    
-                    // Generate a unique ID for the new post
-                    let postId = UUID().uuidString
-                    
-                    // Add the new post to the Firestore database
-                    do {
-                        try FirestoreCollectionReferences.posts.document(postId).setData(from: newPost)
-                        print("Successfully created new post with ID: \(postId)")
-                        self.showAlert.toggle()
-                        self.alertTitle = "Success"
-                        self.alertMessage = "Your post was successfully created!"
-                    } catch {
-                        self.errorMessage = "Failed to create new post: \(error)"
-                    }
-                }
-            }
-        }
-    }
-    
-    
-    struct CustomNavigationBar: View {
-        var leadingButton: () -> AnyView
-        var trailingButton: () -> AnyView
-        
-        var body: some View {
-            HStack {
-                leadingButton()
-                Spacer()
-                trailingButton()
-            }
-            .padding()
-            .background(Color.white)
-            .frame(height: 50)
-        }
-    }
-}
-struct AddPostView_Previews: PreviewProvider {
-    static var previews: some View {
-        AddPostView()
-    }
-}
+import SwiftUIX
+import AVKit
 
 class AddPostViewModel: ObservableObject {
     @Published var errorMessage = ""
@@ -146,112 +17,289 @@ class AddPostViewModel: ObservableObject {
     @Published var postImage: UIImage?
     @Published var showImagePicker = false
     @Published var postMedia: Data?
+    @Published var imageSelection: [PhotosPickerItem] = []
     
-    // MARK: - Profile Image
-    enum ImageState {
-        case empty
-        case loading(Progress)
-        case success(UIImage)
-        case failure(Error)
-    }
-    
-    enum TransferError: Error {
-        case importFailed
-    }
-    
-    struct PostImage: Transferable {
-        let image: UIImage
-        static var transferRepresentation: some TransferRepresentation {
-            DataRepresentation(importedContentType: .image) { data in
-                guard let uiImage = UIImage(data: data) else {
-                    throw TransferError.importFailed
-                }
-                return PostImage(image: uiImage)
-            }
-        }
-    }
-    
-    @Published private(set) var imageState: ImageState = .empty
-    
-    @Published var imageSelection: PhotosPickerItem? = nil {
-        didSet {
-            if let imageSelection {
-                let progress = loadTransferable(from: imageSelection)
-                imageState = .loading(progress)
-            } else {
-                imageState = .empty
-            }
-        }
-    }
-    
-    func loadDataRepresentation(for imageSelection: PhotosPickerItem, completion: @escaping (Data?, Error?) -> ()) {
-        imageSelection.loadTransferable(type: Data.self) { result in
+    func createPost(media: [UIImage], mediaType: MediaType, caption: String) {
+        FirebaseManager.shared.createPost(media: media, mediaType: mediaType, caption: caption) { result in
             switch result {
-            case .success(let data?):
-                completion(data, nil)
-            case .success(nil):
-                completion(nil, nil)
-            case .failure(let error):
-                completion(nil, error)
-            }
-        }
-    }
-    
-    // MARK: - Private Methods
-    
-    private func loadTransferable(from imageSelection: PhotosPickerItem) -> Progress {
-        return imageSelection.loadTransferable(type: PostImage.self) { result in
-            DispatchQueue.main.async {
-                guard imageSelection == self.imageSelection else {
-                    print("Failed to get the selected item.")
-                    return
-                }
-                switch result {
-                case .success(let postImage?):
-                    self.imageState = .success(postImage.image)
-                    self.postImage = postImage.image
-                case .success(nil):
-                    self.imageState = .empty
-                case .failure(let error):
-                    self.imageState = .failure(error)
-                }
+            case .success:
+                print("Successfully created post.")
+            case .failure (let error):
+                self.errorMessage = "Failed to create new post: \(error)"
             }
         }
     }
 }
 
-struct PostImageView: View {
-    let imageState: AddPostViewModel.ImageState
+struct AddPostView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @State private var imageURL: URL?
+    @State private var caption: String = ""
+    @State private var errorMessage: String = ""
+    @State private var showAlert = false
+    @State private var alertTitle = ""
+    @State private var alertMessage = ""
+    @State private var showCreatePostView = false
+    @State private var showVideoPicker = false
+    @State private var showStoryCreator = false
+    @ObservedObject private var addPostViewModel = AddPostViewModel()
     
     var body: some View {
-        SelectPostImageView(imageState: imageState)
-            .scaledToFill()
-            .frame(width: 300, height: 300)
-    }
-}
-
-struct SelectPostImageView: View {
-    let imageState: AddPostViewModel.ImageState
-    
-    var body: some View {
-        switch imageState {
-        case .success(let image):
-            Image(uiImage: image).resizable()
-        case .loading:
-            ProgressView()
-        case .empty:
-            ZStack {
-                Rectangle()
-                    .foregroundColor(.gray)
-                    .frame(width: 300, height: 300)
-                Text("Select a Photo")
-                    .foregroundColor(.white)
-                    .font(.headline)
+        NavigationStack {
+            VStack {
+                List {
+//                    Button(action: {
+//                        showVideoPicker.toggle()
+//                    }) {
+//                        HStack {
+//                            Image(systemName: "video")
+//                            Text("Upload a video")
+//                        }
+//                    }
+//                    .sheet(isPresented: $showVideoPicker) {
+//                        // Implement video picker view
+//                    }
+//                    
+//                    Button(action: {
+//                        showStoryCreator.toggle()
+//                    }) {
+//                        HStack {
+//                            Image(systemName: "text.bubble")
+//                            Text("Upload a story")
+//                        }
+//                    }
+//                    .sheet(isPresented: $showStoryCreator) {
+//                        StoryCreatorView()
+//                    }
+                    
+                    Button(action: {
+                        showCreatePostView.toggle()
+                    }) {
+                        HStack {
+                            Image(systemName: "square.and.pencil")
+                            Text("Create a post")
+                        }
+                    }
+                    .sheet(isPresented: $showCreatePostView) {
+                        CreateAPostView()
+                    }
+                }
+                .listStyle(PlainListStyle())
             }
-        case .failure:
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 40))
-                .foregroundColor(.white)
+            .navigationTitle("Create")
+            .navigationBarItems(leading: Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                EmptyView()
+            })
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("Success")))
+            }
         }
     }
 }
+
+struct AddPostView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddPostView()
+    }
+}
+
+struct CreateAPostView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @State private var postText = ""
+    @ObservedObject private var addPostViewModel = AddPostViewModel()
+    
+    @State private var selectedImages = [UIImage]()
+    @State private var selectedMediaType: MediaType = .carouselImages
+    
+    var body: some View {
+        VStack {
+            VStack {
+                HStack {
+                    Button("Back") {
+                        presentationMode.dismiss()
+                    }
+                    Spacer()
+                    Text("Create Post")
+                        .font(.title)
+                    Spacer()
+                    Button("Post") {
+                        addPostViewModel.createPost(media: selectedImages, mediaType: selectedMediaType, caption: postText)
+                        presentationMode.dismiss()
+                    }
+                }
+                .padding()
+                
+                VStack {
+                    TextField("What's on your mind", text: $postText, axis: .vertical)
+                        .padding()
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
+                        .padding(.horizontal)
+                    
+                    if !selectedImages.isEmpty {
+                        Picker("Media Layout", selection: $selectedMediaType.animation()) {
+                            Text("Grid").tag(MediaType.gridImages)
+                            Text("Carousel").tag(MediaType.carouselImages)
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal)
+                    }
+                    
+                    ImageSelectionView(mediaType: selectedMediaType, images: selectedImages)
+                }
+                
+                Spacer()
+                
+                VStack {
+                    Divider()
+                    PhotosPicker(selection: $addPostViewModel.imageSelection,
+                                 maxSelectionCount: 4,
+                                 matching: .images,
+                                 photoLibrary: .shared()) {
+                        HStack {
+                            Image(systemName: "photo.fill")
+                                .font(.system(size: 25))
+                            Text("Select Images")
+                        }
+                    }
+                                 .buttonStyle(.borderless)
+                                 .padding(.top)
+                                 .onChange(of: addPostViewModel.imageSelection) { _ in
+                                     Task {
+                                         selectedImages.removeAll()
+                                         
+                                         for item in addPostViewModel.imageSelection {
+                                             if let data = try? await item.loadTransferable(type: Data.self) {
+                                                 if let image = UIImage(data: data) {
+                                                     selectedImages.append(image)
+                                                 }
+                                             }
+                                         }
+                                     }
+                                 }
+                    
+                    HStack {
+                        Button("Quiz") {
+                            // Implement Quiz creation
+                        }
+                        .frame(width: 90, height: 80)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        
+                        Button("Text Poll") {
+                            // Implement Text Poll creation
+                        }
+                        .frame(width: 90, height: 80)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        
+                        Button("Image Poll") {
+                            // Implement Image Poll creation
+                        }
+                        .frame(width: 90, height: 80)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                        
+                    }
+                    .padding(.top)
+                    
+                }
+            }
+            Spacer()
+        }
+    }
+}
+
+struct ImageSelectionView: View {
+    let mediaType: MediaType
+    let images: [UIImage]
+    let columns: [GridItem] = Array(repeating: .init(.flexible()), count: 2)
+
+    @State private var selectedImage: IndexedUIImage?
+    
+    struct IndexedUIImage: Identifiable {
+        let id: Int
+        let image: UIImage
+    }
+    
+    private func carouselImage(_ index: Int) -> some View {
+        let isLandscape = images[index].size.width > images[index].size.height
+        return Button(action: {
+            selectedImage = IndexedUIImage(id: index, image: images[index])
+        }) {
+            Image(uiImage: images[index])
+                .resizable()
+                .scaledToFill()
+                .frame(
+                    width: isLandscape ? UIScreen.main.bounds.width * 0.9 : UIScreen.main.bounds.width * 0.9,
+                    height: isLandscape ? (UIScreen.main.bounds.width * 0.9) / 2 : (UIScreen.main.bounds.width * 0.9) / 2)
+                .clipped()
+                .cornerRadius(10)
+        }
+    }
+    
+    var body: some View {
+        Group {
+            if mediaType == .carouselImages {
+                TabView {
+                    ForEach(images.indices, id: \.self) { index in
+                        carouselImage(index)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle())
+                .frame(width: UIScreen.main.bounds.width * 0.9, height: 200)
+                .cornerRadius(10)
+            } else if mediaType == .gridImages {
+                LazyVGrid(columns: columns, spacing: 2) {
+                    ForEach(images.indices, id: \.self) { index in
+                        Image(uiImage: images[index])
+                            .resizable()
+                            .scaledToFill()
+                            .frame(
+                                minWidth: columns.count == 3 ? 0 : 200,
+                                maxWidth: columns.count == 3 ? .infinity : 200,
+                                minHeight: 200,
+                                maxHeight: 200)
+                            .clipped()
+                            .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .fullScreenCover(item: $selectedImage) { indexedImage in
+            ExpandedImageViewWithImage(image: indexedImage.image)
+        }
+    }
+}
+
+struct ExpandedImageViewWithImage: View {
+    var image: UIImage
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        ZStack {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .blur(radius: 10)
+                .edgesIgnoringSafeArea(.all)
+            
+            Color.black.opacity(0.9)
+                .edgesIgnoringSafeArea(.all)
+            
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: UIScreen.main.bounds.width, maxHeight: .infinity)
+        }
+        .onTapGesture {
+            dismiss()
+        }
+    }
+}
+

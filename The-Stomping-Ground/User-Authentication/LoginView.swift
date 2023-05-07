@@ -29,13 +29,25 @@ struct LoginView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            signInForm
-            .overlay(noAccountText, alignment: .bottom)
-            .environment(\.rootPresentationMode, self.$isInLoginMode)
-            .navigationTitle("")
-            .navigationBarHidden(true)
-            .background(Color(.init(white: 0, alpha: 0.09)))
+        if #available(iOS 16.0, *) {
+            NavigationStack {
+                signInForm
+                    .overlay(noAccountText, alignment: .bottom)
+                    .environment(\.rootPresentationMode, self.$isInLoginMode)
+                    .navigationTitle("")
+                    .navigationBarHidden(true)
+                    .background(Color(.init(white: 0, alpha: 0.09)))
+            }
+        } else {
+            VStack {
+                signInForm
+                    .overlay(noAccountText, alignment: .bottom)
+                    .environment(\.rootPresentationMode, self.$isInLoginMode)
+                    .navigationTitle("")
+                    .navigationBarHidden(true)
+                    .background(Color(.init(white: 0, alpha: 0.09)))
+            }
+            // Fallback on earlier versions
         }
     }
     

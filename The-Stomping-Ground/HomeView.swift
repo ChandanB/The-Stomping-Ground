@@ -9,165 +9,107 @@ import SwiftUI
 import Firebase
 import FirebaseFirestoreSwift
 
-enum Tab {
-    case home, search, post, notifications, messages
+class HomeViewModel: ObservableObject {
+    @Published var posts = [Post]()
+    @Published var stories = [Post]()
+    
+    private var homeFeedListener: ListenerRegistration?
+    
+    init() {
+        fetchPosts()
+    }
+    
+    deinit {
+        homeFeedListener?.remove()
+    }
+    
+    func fetchPosts() {
+        homeFeedListener = FirebaseManager.shared.fetchHomeFeed { posts in
+            for post in posts {
+                if post.mediaType != .story {
+                    self.posts.append(post)
+                } else {
+                    self.stories.append(post)
+                }
+            }
+        }
+    }
 }
 
-struct ContentView: View {
-    
-    @State private var selectedTab: Tab = .home
-    @State private var showAddPostView = false
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                if selectedTab == .home {
-                    HomeNavigationBar()
-                }
-                
-                TabView(selection: $selectedTab) {
-                    HomeView()
-                        .tabItem {
-                            Image(systemName: "house")
-                            Text("Home")
-                        }.tag(Tab.home)
-                    
-                    SearchView()
-                        .tabItem {
-                            Image(systemName: "magnifyingglass")
-                            Text("Search")
-                        }.tag(Tab.search)
-                    
-                    MakerspaceView()
-                        .tabItem {
-                            Image(systemName: "paintpalette")
-                            Text("Makerspace")
-                        }.tag(Tab.post)
-                    
-                    NotificationsView(notifications: [])
-                        .tabItem {
-                            Image(systemName: "bell")
-                            Text("Notifications")
-                        }.tag(Tab.notifications)
-                    
-                    EditProfileView()
-                        .tabItem {
-                            Image(systemName: "person")
-                            Text("Profile")
-                        }.tag(Tab.messages)
-                }
-            }
-        }
-        
-    }
-    
-    struct HomeNavigationBar: View {
-        var body: some View {
-            HStack {
-                NavigationLink {
-                    ChatListView().navigationBarBackButtonHidden()
-                } label: {
-                    Image(systemName: "message")
-                        .foregroundColor(.black)
-                }.frame(width: 16, height: 16)
-                
-                Spacer()
-                
-                Text("Stomping Ground Online")
-                    .font(.system(size: 20))
-                
-                Spacer()
-                
-                NavigationLink {
-                    AddPostView().navigationBarBackButtonHidden()
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundColor(.black)
-                }.frame(width: 16, height: 16)
-            }
-            .padding()
-        }
-    }
-    
-    
-}
 
 struct HomeView: View {
     @ObservedObject var homeViewModel = HomeViewModel()
+    @Binding var selectedBlog: Item?
+    @Binding var showBlogListView: Bool
     
+    enum Tab: String, CaseIterable, Identifiable {
+            case sgDaily, forYou
+            var id: String { self.rawValue }
+    }
+    
+    @State private var selectedTab: Tab = .sgDaily
+
     var body: some View {
-        NavigationView {
-            VStack {
-                ScrollView(.horizontal) {
-                    HStack(spacing: 10) {
-                        ForEach(homeViewModel.stories) { story in
-                            StoryView(story: story)
+            NavigationStack {
+                VStack {
+                    Picker("", selection: $selectedTab) {
+                        ForEach(Tab.allCases) { tab in
+                            Text(tab == .sgDaily ? "SG Daily" : "For You")
+                                .tag(tab)
                         }
                     }
-                    .padding(.leading, 10)
-                }
-                .frame(height: 100)
-                
-                ScrollView {
-                    VStack {
-                        Text("asdas")
-                        ForEach(homeViewModel.posts) { post in
-                            Text("OIST")
-                            PostView(post: post)
+                    .pickerStyle(SegmentedPickerStyle())
+                    .padding()
+                    .background(.clear)
+
+                    ScrollView {
+                        if selectedTab == .sgDaily {
+//                            ScrollView(.horizontal, showsIndicators: false) {
+//                                HStack(spacing: 10) {
+//                                    ForEach(homeViewModel.stories) { story in
+//                                        StoryBubbleView(story: story)
+//                                    }
+//                                }
+//                                .padding(.leading, 10)
+//                            }
+//                            .frame(height: 100)
+                            
+                            Spacer()
+
+                            VStack(alignment: .leading, spacing: 20) {
+                                let currentHour = Calendar.current.component(.hour, from: Date())
+                                   if currentHour >= 18 || currentHour < 6 {
+                                       DailyEmbersCard()
+                                   } else {
+                                       DailyKindlingCard()
+                                   }
+
+                                Spacer()
+
+                                ReadingPlansSection(selectedBlog: $selectedBlog, showBlogListView: $showBlogListView)
+
+                                Spacer()
+                            }
+                        } else {
+                            // For You content
+                            VStack(spacing: 24) {
+                                ForEach(homeViewModel.posts) { post in
+                                    PostView(post: post)
+                                }
+                            }
+                            .padding(.top)
                         }
-                        .padding()
-                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 10, trailing: 20))
                     }
+                    .background(Color(.systemGray6))
                 }
+                .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
+                .background(Color(.clear))
+                .navigationBarHidden(true)
             }
-            .navigationBarHidden(true)
+            .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
+            .background(Color(.clear))
         }
-    }
-}
-
-struct StoryView: View {
-    var story: Story
     
-    var body: some View {
-        LazyVStack {
-            // Display the profile image for the user who shared the story
-            Image(story.user.profileImageUrl)
-                .resizable()
-                .frame(width: 50, height: 50)
-                .clipShape(Circle())
-            
-            // Display the username of the user who shared the story
-            Text(story.user.username)
-                .font(.caption)
-        }
-    }
-}
-
-struct PostView: View {
-    var post: Post
-    
-    var body: some View {
-        LazyHStack {
-            // Display the profile image for the user who made the post
-            Image(post.user.profileImageUrl)
-                .resizable()
-                .frame(width: 50, height: 50)
-                .clipShape(Circle())
-            
-            VStack(alignment: .leading) {
-                // Display the username and caption for the post
-                Text(post.user.username)
-                    .font(.headline)
-                Text(post.caption)
-                    .font(.subheadline)
-            }
-            
-            Spacer()
-            
-            // Display the options button (three dots)
-            OptionsButton()
-        }
-    }
 }
 
 struct OptionsButton: View {
@@ -187,41 +129,82 @@ struct HomeView_Previews: PreviewProvider {
     }
 }
 
-class HomeViewModel: ObservableObject {
-    @Published var posts = [Post]()
-    @Published var stories = [Story]()
-
-    func fetchFollowing() {
-        FirebaseManager.shared.fetchHomeFeed { posts in
-            self.posts = posts
-        }
-        
-        guard let uid = FirestoreConstants.currentUser?.uid else {return}
-        FirebaseManager.shared.fetchFollowing(userId: uid) { following in
-            for user in following {
-                self.fetchStories(userId: user.uid)
-            }
-        }
-    }
+struct HomeSearchBarView: View {
+    @State private var searchText: String = ""
     
-    func fetchStories(userId: String) {
-        FirestoreCollectionReferences.users.document(userId).collection("stories").getDocuments(completion: { (querySnapshot, error) in
-            if let error = error {
-                print("Error fetching stories for user with ID: \(userId) " + " Error: \(error)")
-                return
-            }
-            guard let storyDocuments = querySnapshot?.documents else { return }
-            for document in storyDocuments {
-                do {
-                    let story = try document.data(as: Story.self)
-                    self.stories.append(story)
-                } catch {
-                    print(error)
-                }
-            }
-        })
+    var body: some View {
+        HStack {
+            TextField("Search", text: $searchText)
+                .padding(7)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+            Button(action: {
+                // Handle search action
+            }, label: {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+            })
+        }
     }
 }
 
+struct DailyKindlingCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Kindling")
+                .font(.title2)
+                .fontWeight(.bold)
+            Text("Morning Thoughts")
+                .font(.title)
+                .fontWeight(.semibold)
+            Text("Let's start the day with some positive thoughts and set our intentions.")
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action: {
+                // Handle start action
+            }, label: {
+                Text("Start")
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 10)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            })
+        }
+        .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
+        .padding()
+        .background(Color(.white))
+        .cornerRadius(8)
+    }
+}
+
+struct DailyEmbersCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Embers")
+                .font(.title2)
+                .fontWeight(.bold)
+            Text("Rose, Bud, Thorn")
+                .font(.title)
+                .fontWeight(.semibold)
+            Text("Let's practice reflection and look back on some of our favorite and least favorite parts of the day.")
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(action: {
+                // Handle share action
+            }, label: {
+                Text("Start")
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 10)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+            })
+        }
+        .padding()
+        .background(Color(.white))
+        .cornerRadius(8)
+    }
+}
 
 

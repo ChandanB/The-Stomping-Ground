@@ -71,12 +71,44 @@ struct PostCell: View {
                             .foregroundColor(.gray)
                     }
                     
-                    // Post image
-                    WebImage(url: URL(string: post.postMedia ?? ""))
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .scaledToFit()
-                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                    if let postMedia = post.postMedia {
+//                        switch postMedia {
+//                        case .image:
+//                            WebImage(url: URL(string: post.postImages?.first))
+//                                .resizable()
+//                                .aspectRatio(contentMode: .fit)
+//                                .scaledToFit()
+//                                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                            
+//                        case .video:
+//                            WebImage(url: URL(string: "https://example.com/thumbnail.jpg"))
+//                                .resizable()
+//                                .aspectRatio(contentMode: .fit)
+//                                .scaledToFit()
+//                                .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                            
+//                        case .carouselImages:
+//                            if let firstImageURL = post.postImages?.first {
+//                                WebImage(url: URL(string: firstImageURL))
+//                                    .resizable()
+//                                    .aspectRatio(contentMode: .fit)
+//                                    .scaledToFit()
+//                                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                            }
+//                            
+//                        case .gridImages:
+//                            if let firstImageURL = post.postImages?.first {
+//                                WebImage(url: URL(string: firstImageURL))
+//                                    .resizable()
+//                                    .aspectRatio(contentMode: .fit)
+//                                    .scaledToFit()
+//                                    .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+//                            }
+//                            
+//                        case .none:
+//                            Text(post.caption)
+//                        }
+//                    }
                     
                     HStack {
                         HStack {

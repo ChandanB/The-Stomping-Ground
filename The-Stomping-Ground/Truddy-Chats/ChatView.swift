@@ -8,13 +8,23 @@
 import SwiftUI
 import Firebase
 import SDWebImageSwiftUI
+import PhotosUI
+
+struct ChatMessageWithProfileImage: Identifiable {
+    let id = UUID()
+    let chatMessage: ChatMessage
+    let profileImageUrl: String
+}
 
 class ChatViewModel: ObservableObject {
     
     @Published var chatText = ""
     @Published var errorMessage = ""
     @Published var count = 0
+    @Published var participants = [User]()
     @Published var chatMessages = [ChatMessage]()
+    
+    var sender: User?
     
     var chat: Chat?
     var currentUser: User?
@@ -43,12 +53,25 @@ class ChatViewModel: ObservableObject {
             }
             
             if let messages = messages {
+                let dispatchGroup = DispatchGroup()
                 self.chatMessages = messages
                 
-                // Mark chat as seen by current user
-                if let currentUserID = self.currentUser?.uid {
-                    if !chat.seenBy[currentUserID, default: false] {
-                        FirebaseManager.shared.markChat(chat: chat, userId: currentUserID, seen: true)
+                dispatchGroup.notify(queue: .main) {
+                    // Fetch chat participants
+                    FirebaseManager.shared.fetchChatParticipants(chat: chat, excludedUID: self.currentUser?.uid) { result in
+                        switch result {
+                        case .success(let users):
+                            self.participants = users
+                        case .failure(let error):
+                            print("Error loading participants: \(error)")
+                        }
+                    }
+                    
+                    // Mark chat as seen by current user
+                    if let currentUserID = self.currentUser?.uid {
+                        if !(chat.seenBy[currentUserID] ?? true) {
+                            FirebaseManager.shared.markChat(chat: chat, userId: currentUserID, seen: true)
+                        }
                     }
                 }
             }
@@ -58,8 +81,14 @@ class ChatViewModel: ObservableObject {
     func handleSend() {
         guard let chatId = self.chat?.id else { return }
         
+        if chatText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return
+        }
+        
+        let text = chatText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
         FirebaseManager.shared.fetchChatWithId(chatId: chatId) { chat in
-            FirebaseManager.shared.sendMessageToChat(text: self.chatText, toChatWithID: chatId, toReceivers: chat?.participants ?? []) { error in
+            FirebaseManager.shared.sendMessageToChat(text: text, toChatWithID: chatId, toReceivers: chat?.participants ?? []) { error in
                 if let error = error {
                     print("Error sending message: \(error)")
                     self.errorMessage = "Failed to save message into Firestore: \(error)"
@@ -70,8 +99,8 @@ class ChatViewModel: ObservableObject {
                 self.count += 1
             }
         }
-        
     }
+    
 }
 
 struct ChatView: View {
@@ -79,23 +108,42 @@ struct ChatView: View {
     @Environment(\.dismiss) private var dismiss
     
     let chat: Chat?
+    let currentUser: User?
     static let emptyScrollToString = "Empty"
-    
     @ObservedObject var chatViewModel: ChatViewModel
+    @State private var isPresentingEditChatView = false
     
     init(chat: Chat?, currentUser: User?) {
         self.chat = chat
+        self.currentUser = currentUser
         self.chatViewModel = ChatViewModel(chat: chat, currentUser: currentUser)
     }
     
     var body: some View {
-        //        chatNavBar
         ZStack {
             messagesView
             Text(chatViewModel.errorMessage)
         }
         .navigationTitle(chat?.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if currentUser?.userType == .counselor {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        isPresentingEditChatView.toggle()
+                    }) {
+                        Image(systemName: "pencil")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isPresentingEditChatView) {
+            if let chat = chat, let currentUser = currentUser {
+                EditChatView(chat: chat, currentUser: currentUser)
+            } else {
+                Text("Error: Chat or current user is missing.")
+            }
+        }
         .onDisappear {
             chatViewModel.firestoreListener?.remove()
         }
@@ -111,7 +159,7 @@ struct ChatView: View {
             }
             
             HStack {
-                WebImage(url: URL(string: "ADD IMAGE FOR CHAT"))
+                WebImage(url: URL(string: chat?.chatImageUrl ?? ""))
                     .resizable()
                     .scaledToFill()
                     .frame(width: 40, height: 40)
@@ -140,12 +188,9 @@ struct ChatView: View {
             ScrollView {
                 ScrollViewReader { scrollViewProxy in
                     VStack {
-                        ForEach(chatViewModel.chatMessages) { message in
-                            ChatMessageView(message: message)
+                        ForEach(chatViewModel.chatMessages, id: \.id) { message in
+                            ChatMessageView(message: message).id(message.id)
                         }
-                        
-                        HStack{ Spacer() }
-                            .id(Self.emptyScrollToString)
                     }
                     .onReceive(chatViewModel.$count) { _ in
                         withAnimation(.easeOut(duration: 0.5)) {
@@ -156,33 +201,20 @@ struct ChatView: View {
             }
             .background(Color(.init(white: 0.95, alpha: 1)))
             .safeAreaInset(edge: .bottom) {
-                chatBottomBar
+                chatInputView
                     .background(Color(.systemBackground).ignoresSafeArea())
             }
         }
     }
     
-    private var chatBottomBar: some View {
+    private var chatInputView: some View {
         HStack(spacing: 16) {
-//            Button {
-//                presentImagePicker()
-//            } label: {
-//                Image(systemName: "photo.on.rectangle")
-//                    .font(.system(size: 24))
-//                    .foregroundColor(Color(.darkGray))
-//            }
-            
             ZStack {
-                DescriptionPlaceholder()
-                TextEditor(text: $chatViewModel.chatText)
-                                    .frame(minHeight: 40, maxHeight: 120)
-                                    .padding(.top, 2)
-                                    .opacity(chatViewModel.chatText.isEmpty ? 0.5 : 1)
-                                    .onChange(of: chatViewModel.chatText) { _ in
-                                        updateHeight()
-                                    }
+                TextField("Send a message...", text: $chatViewModel.chatText, axis: .vertical)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .lineLimit(5)
+                    .opacity(chatViewModel.chatText.isEmpty ? 0.5 : 1)
             }
-            .frame(height: 40)
             
             Button {
                 chatViewModel.handleSend()
@@ -195,36 +227,16 @@ struct ChatView: View {
             .background(Color.blue)
             .cornerRadius(4)
         }
+        .padding(.top)
         .padding(.horizontal)
         .padding(.vertical, 8)
     }
-    
-    private func updateHeight() {
-//            let height = ceil(chatViewModel.chatText.height(withConstrainedWidth: UIScreen.main.bounds.width - 70, font: .systemFont(ofSize: 16)))
-//            chatViewModel.textEditorHeight = min(height + 18, 120)
-        }
-    
 }
 
-private struct DescriptionPlaceholder: View {
-    var body: some View {
-        HStack {
-            Text("Description")
-                .foregroundColor(Color(.gray))
-                .font(.system(size: 17))
-                .padding(.leading, 5)
-                .padding(.top, -4)
-            Spacer()
-        }
-    }
-}
+
 
 struct ChatLogView_Previews: PreviewProvider {
     static var previews: some View {
-        //        NavigationView {
-        //            ChatLogView(chatUser: .init(data: ["uid": "e9vymWd7xfUJUKnUO251SWw5ZtH3", "name": "Third"]))
-        //        }
         ContentView()
     }
 }
-

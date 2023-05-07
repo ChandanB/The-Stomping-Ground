@@ -20,7 +20,6 @@ struct RegisterAccountView: View {
     @State private var image: UIImage?
     @State private var userType: UserType?
     
-    
     @State private var creationStatusMessage = ""
     @State private var accountSuccessfullyCreated = false
     
@@ -64,7 +63,7 @@ struct RegisterAccountView: View {
                 VStack(spacing: 12) {
                     EditableCircularProfileImage(viewModel: userModel)
                         .padding(.bottom, 16)
-                    CamperCounselorToggleButtons
+                    UserTypeSelectionView(userType: $userType)
                         .padding([.leading, .trailing])
                     FormFields
                     Spacer()
@@ -77,7 +76,7 @@ struct RegisterAccountView: View {
                         alreadyHaveAccountText
                             .padding(.top, 60)
                     }
-                  
+
                     Spacer()
                 }
                 .padding()
@@ -87,19 +86,22 @@ struct RegisterAccountView: View {
         }
     }
     
-    private var CamperCounselorToggleButtons: some View {
-        VStack(spacing: 7) {
-            Text(userType == UserType.counselor ? "Counselor" : "Camper")
-                .font(.system(size: 28, weight: .medium))
-                .foregroundColor(.black)
-            VStack(spacing: 20) {
-                Toggle(isOn: Binding(
-                    get: { self.userType == UserType.counselor },
-                    set: { self.userType = $0 ? UserType.counselor : nil })) {
-                        Text("Counselor")
-                            .foregroundColor(.black)
-                            .font(.system(size: 14, weight: .medium))
-                    }
+    private struct UserTypeSelectionView: View {
+        @Binding var userType: UserType?
+
+        var body: some View {
+            VStack(spacing: 7) {
+                Text(userType?.rawValue.capitalized ?? "Select User Type")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundColor(.black)
+
+                Picker("User Type", selection: $userType) {
+                    Text("Camper").tag(UserType.camper as UserType?)
+                    Text("Counselor").tag(UserType.counselor as UserType?)
+                    Text("Donor").tag(UserType.donor as UserType?)
+                    Text("Parent").tag(UserType.parent as UserType?)
+                }
+                .pickerStyle(MenuPickerStyle())
             }
         }
     }
@@ -158,14 +160,14 @@ struct RegisterAccountView: View {
             }
             .padding()
             
-            TextField("Bio", text: $bio, axis: .vertical)
-                .lineLimit(3, reservesSpace: true)
-                .background(.white)
-                .textFieldStyle(PlainTextFieldStyle())
-                .padding([.leading, .trailing, .top])
-                .onReceive(Just(bio)) { _ in limitText(RegisterAccountConstants.aboutMeLimit) }
-            Text("\(bio.count)" + " / " + "\(RegisterAccountConstants.aboutMeLimit)")
-                .padding(.leading, 300)
+//            TextField("Bio", text: $bio, axis: .vertical)
+//                .lineLimit(3, reservesSpace: true)
+//                .background(.white)
+//                .textFieldStyle(PlainTextFieldStyle())
+//                .padding([.leading, .trailing, .top])
+//                .onReceive(Just(bio)) { _ in limitText(RegisterAccountConstants.aboutMeLimit) }
+//            Text("\(bio.count)" + " / " + "\(RegisterAccountConstants.aboutMeLimit)")
+//                .padding(.leading, 300)
         }
         
     }
@@ -228,7 +230,7 @@ struct RegisterAccountView: View {
     
     private func handleAuthentication() {
         var image: UIImage = userModel.profileImage
-        var userType: UserType = self.userType ?? .camper
+        let userType: UserType = self.userType ?? .camper
         
         if image == UIImage() {
             image = UIImage(systemName: "profile") ?? UIImage()

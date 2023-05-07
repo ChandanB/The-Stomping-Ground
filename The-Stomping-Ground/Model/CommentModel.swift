@@ -10,6 +10,15 @@ import FirebaseFirestoreSwift
 
 struct Comment: Codable, Identifiable {
     @DocumentID var id: String?
-    let text, fromNow: String
+    let postId: String
     let user: User
+    let text: String
+    let timestamp: Date
+    
+    var timeAgo: String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: timestamp, relativeTo: Date())
+    }
 }
+

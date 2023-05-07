@@ -16,19 +16,15 @@ class ChatListViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var currentUser: User?
     @Published var chat: Chat?
-    @Published var isUserCurrentlyLoggedOut = false
     @Published var chats = [Chat]()
     @Published var usersDictionary = [String: User]()
     
     private var listener: ListenerRegistration?
     private let firestore = Firestore.firestore()
     
-    private let debouncer = Debouncer(delay: .milliseconds(1000)) // Initialize the debouncer with a delay of 500ms
+    private let debouncer = Debouncer(delay: .milliseconds(1000))
     
     init() {
-        DispatchQueue.main.async {
-            self.isUserCurrentlyLoggedOut = FirebaseManager.shared.auth.currentUser?.uid == nil
-        }
         fetchCurrentUser()
         fetchChats()
     }
@@ -41,18 +37,24 @@ class ChatListViewModel: ObservableObject {
     }
     
     func fetchChatParticpants(chat: Chat) {
-        for particpantId in chat.participants {
-            FirebaseManager.shared.fetchUser(withUID: particpantId) { user in
-                self.usersDictionary[user.uid] = user
+        FirebaseManager.shared.fetchChatParticipants(chat: chat) { result in
+            switch result {
+            case .success(let users):
+                for user in users {
+                    self.usersDictionary[user.uid] = user
+                }
+            case .failure(let error):
+                print("Error fetching chat participants: \(error.localizedDescription)")
+
             }
         }
     }
     
     func fetchChats() {
-        self.listener = FirebaseManager.shared.fetchChatsForCurrentUser { result in
+        self.listener = FirebaseManager.shared.fetchChatsForUser { result in
             switch result {
             case .success(let chats):
-                self.debouncer.run { // Run the debouncer before updating the chats array
+                self.debouncer.run { 
                     DispatchQueue.main.async {
                         self.chats = chats
                         for chat in chats {
@@ -70,7 +72,7 @@ class ChatListViewModel: ObservableObject {
         FirebaseManager.shared.deleteChat(chat: chat) { result in
             switch result {
             case .success:
-                break // do nothing
+                break
             case .failure(let error):
                 print("Error deleting chat: \(error)")
             }
@@ -80,12 +82,6 @@ class ChatListViewModel: ObservableObject {
     deinit {
         listener?.remove()
     }
-    
-    func handleSignOut() {
-        isUserCurrentlyLoggedOut.toggle()
-        try? FirebaseManager.shared.auth.signOut()
-    }
-    
 }
 
 struct ChatListView: View {
@@ -102,17 +98,17 @@ struct ChatListView: View {
         NavigationStack {
             VStack {
                 chatListNavBar
+                    .padding(.top)
                 messagesView
-                NavigationLink("", isActive: $shouldNavigateToChatLogView) {
-                    ChatView(chat: self.chat, currentUser: chatListViewModel.currentUser)
-                }
+            }
+            .navigationDestination(isPresented: $shouldNavigateToChatLogView) {
+                ChatView(chat: self.chat, currentUser: chatListViewModel.currentUser)
             }
             .overlay(newChatButton, alignment: .bottom)
             .navigationBarHidden(true)
         }
     }
     
-    @State private var shouldShowLogOutOptions = false
     private var chatListNavBar: some View {
         HStack(spacing: 16) {
             
@@ -156,29 +152,7 @@ struct ChatListView: View {
             
             Spacer()
             
-            Button {
-                shouldShowLogOutOptions.toggle()
-            } label: {
-                Image(systemName: "gear")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(Color(.label))
-            }
-            .padding()
-            .actionSheet(isPresented: $shouldShowLogOutOptions) {
-                .init(title: Text("Settings"), buttons: [
-                    .destructive(Text("Sign Out"), action: {
-                        chatListViewModel.handleSignOut()
-                    }),
-                    .cancel()
-                ])
-            }
-            .fullScreenCover(isPresented: $chatListViewModel.isUserCurrentlyLoggedOut, onDismiss: nil) {
-                LoginView(didCompleteLoginProcess: {
-                    self.chatListViewModel.isUserCurrentlyLoggedOut = false
-                    self.chatListViewModel.fetchCurrentUser()
-                    self.chatListViewModel.fetchChats()
-                })
-            }
+            Spacer()
             
         }
     }
@@ -212,6 +186,7 @@ struct ChatListView: View {
                     participantsAvatars(chat)
                 } else {
                     chatImage(chat.chatImageUrl)
+                        .frame(width: 40, height: 40)
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -223,7 +198,8 @@ struct ChatListView: View {
                     
                     Text(chat.lastMessage)
                         .font(.system(size: 14))
-                        .foregroundColor(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Color(.darkGray) : Color(.label))
+                        .foregroundColor(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Color(.lightGray) : Color(.label))
+                        .font(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Font.headline.weight(.black) : Font.headline.weight(.regular))
                         .multilineTextAlignment(.leading)
                         .lineLimit(1)
                 }
@@ -242,11 +218,11 @@ struct ChatListView: View {
         WebImage(url: URL(string: url))
             .resizable()
             .scaledToFill()
-            .frame(width: 40, height: 40)
+            .frame(width: 70, height: 70)
             .clipped()
-            .cornerRadius(40)
-            .overlay(RoundedRectangle(cornerRadius: 40)
-                .stroke(Color.black, lineWidth: 1))
+            .cornerRadius(70)
+            .overlay(RoundedRectangle(cornerRadius: 70)
+                .stroke(Color.black, lineWidth: 0.5))
             .shadow(radius: 3)
     }
     
@@ -307,54 +283,6 @@ struct ChatListView: View {
             )
         }
     }
-    
-    //    private func participantsAvatars(_ chat: Chat) -> some View {
-    //        let participants = chat.participants.compactMap { chatListViewModel.usersDictionary[$0] }
-    //
-    //        switch participants.count {
-    //        case 0:
-    //            return AnyView(EmptyView())
-    //        case 1:
-    //            return AnyView(participantAvatar(participant: participants.first, size: 40))
-    //        case 2:
-    //            return AnyView(
-    //                ZStack {
-    //                    participantAvatar(participant: participants.first, size: 40, offset: CGPoint(x: -15, y: 0))
-    //                    participantAvatar(participant: participants.last, size: 40, offset: CGPoint(x: 15, y: 0))
-    //                }
-    //            )
-    //        case 3:
-    //            return AnyView(
-    //                ZStack {
-    //                    participantAvatar(participant: participants.first, size: 40, offset: CGPoint(x: 15, y: 15))
-    //                    participantAvatar(participant: participants[1], size: 40, offset: CGPoint(x: -15, y: 15))
-    //                    participantAvatar(participant: participants.last, size: 40, offset: CGPoint(x: 0, y: -15))
-    //                }
-    //            )
-    //        case 4:
-    //            return AnyView(
-    //                ZStack {
-    //                    participantAvatar(participant: participants[0], size: 40, offset: CGPoint(x: -15, y: -15))
-    //                    participantAvatar(participant: participants[1], size: 40, offset: CGPoint(x: 15, y: -15))
-    //                    participantAvatar(participant: participants[2], size: 40, offset: CGPoint(x: -15, y: 15))
-    //                    participantAvatar(participant: participants[3], size: 40, offset: CGPoint(x: 15, y: 15))
-    //                }
-    //            )
-    //        default:
-    //            let angleStep = 2 * Double.pi / Double(participants.count)
-    //            return AnyView(
-    //                ZStack {
-    //                    ForEach(participants.indices, id: \.self) { index in
-    //                        let angle = Double(index) * angleStep
-    //                        let radius = 20.0
-    //                        let x = radius * cos(angle)
-    //                        let y = radius * sin(angle)
-    //                        participantAvatar(participant: participants[index], size: 30, offset: CGPoint(x: CGFloat(x), y: CGFloat(y)))
-    //                    }
-    //                }
-    //            )
-    //        }
-    //    }
     
     private func participantAvatar(participant: User?, size: CGFloat, offset: CGPoint = .zero) -> some View {
         if let participant = participant {

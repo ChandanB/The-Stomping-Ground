@@ -12,6 +12,7 @@ struct The_Stomping_GroundApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .customFont(name: FontConstants.mainFont, size: 17)
         }
     }
 }

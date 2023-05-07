@@ -109,7 +109,7 @@ class UserViewModel: ObservableObject {
         dispatchGroup.notify(queue: .main) {
             let user = User(id: currentUser.uid, uid: currentUser.uid, name: self.username, username: self.username, email: currentUser.email, profileImageUrl: profileImageUrl, status: currentUser.status)
             
-            FirebaseManager.uploadUser(withUID: currentUser.uid, bio: self.bio, name: self.name, username: self.username, email: user.email, userType: self.userType ?? .camper) {
+            FirebaseManager.uploadUser(withUID: currentUser.uid, bio: self.bio, name: self.name, status: "online", username: self.username, email: user.email, userType: self.userType ?? .camper) {
                 completion(.success(()))
             }
         }
