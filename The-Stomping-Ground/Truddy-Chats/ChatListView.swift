@@ -15,7 +15,6 @@ import Combine
 class ChatListViewModel: ObservableObject {
     @Published var errorMessage = ""
     @Published var currentUser: User?
-    @Published var chat: Chat?
     @Published var chats = [Chat]()
     @Published var usersDictionary = [String: User]()
     
@@ -26,27 +25,12 @@ class ChatListViewModel: ObservableObject {
     
     init() {
         fetchCurrentUser()
-        fetchChats()
     }
     
     func fetchCurrentUser() {
         FirebaseManager.shared.fetchCurrentUser { user in
             self.currentUser = user
             self.fetchChats()
-        }
-    }
-    
-    func fetchChatParticpants(chat: Chat) {
-        FirebaseManager.shared.fetchChatParticipants(chat: chat) { result in
-            switch result {
-            case .success(let users):
-                for user in users {
-                    self.usersDictionary[user.uid] = user
-                }
-            case .failure(let error):
-                print("Error fetching chat participants: \(error.localizedDescription)")
-
-            }
         }
     }
     
@@ -64,6 +48,19 @@ class ChatListViewModel: ObservableObject {
                 }
             case .failure(let error):
                 print("Error fetching chats: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    func fetchChatParticpants(chat: Chat) {
+        FirebaseManager.shared.fetchChatParticipants(chat: chat) { result in
+            switch result {
+            case .success(let users):
+                for user in users {
+                    self.usersDictionary[user.uid] = user
+                }
+            case .failure(let error):
+                print("Error fetching chat participants: \(error.localizedDescription)")
             }
         }
     }
@@ -90,19 +87,20 @@ struct ChatListView: View {
     @State private var longPressedChat: Chat?
     
     @ObservedObject private var chatListViewModel = ChatListViewModel()
-    private var chatViewModel = ChatViewModel(chat: nil, currentUser: nil)
+    @ObservedObject private var chatViewModel = ChatViewModel(chat: nil)
     
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack {
                 chatListNavBar
                     .padding(.top)
+                Divider()
                 messagesView
             }
             .navigationDestination(isPresented: $shouldNavigateToChatLogView) {
-                ChatView(chat: self.chat, currentUser: chatListViewModel.currentUser)
+                ChatView(viewModel: self.chatViewModel)
             }
             .overlay(newChatButton, alignment: .bottom)
             .navigationBarHidden(true)
@@ -136,14 +134,14 @@ struct ChatListView: View {
                     let name = chatListViewModel.currentUser?.name ?? ""
                     
                     Text(name)
-                        .font(.system(size: 16, weight: .bold))
+                        .navigationTitle()
                     
                     HStack {
                         Circle()
                             .foregroundColor(.green)
                             .frame(width: 6, height: 6)
                         Text("online")
-                            .font(.system(size: 12))
+                            .lightFootnote()
                             .foregroundColor(Color(.lightGray))
                     }
                     
@@ -160,9 +158,6 @@ struct ChatListView: View {
     private var messagesView: some View {
         ScrollView {
             ForEach(chatListViewModel.chats) { chat in
-                HStack {
-                    
-                }
                 chatListItemView(chat: chat)
                     .id(chat.id)
                     .padding()
@@ -176,8 +171,8 @@ struct ChatListView: View {
     
     private func chatListItemView(chat: Chat) -> some View {
         return Button(action: {
-            self.chat = Chat(id: chat.id, createdAt: chat.createdAt, createdBy: chat.createdBy, name: chat.name, lastMessage: chat.lastMessage, chatImageUrl: chat.chatImageUrl, participants: chat.participants, lastMessageTime: chat.lastMessageTime, seenBy: chat.seenBy)
-            self.chatViewModel.chat = self.chat
+            self.chatViewModel.chat = chat
+            self.chatViewModel.currentUser = self.chatListViewModel.currentUser
             self.chatViewModel.fetchChatMessages()
             self.shouldNavigateToChatLogView.toggle()
         }) {
@@ -191,24 +186,24 @@ struct ChatListView: View {
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(chat.name)
-                        .font(.system(size: 16, weight: .bold))
+                        .boldSubheadline()
                         .foregroundColor(Color(.label))
                         .multilineTextAlignment(.leading)
                         .lineLimit(1) //
                     
                     Text(chat.lastMessage)
-                        .font(.system(size: 14))
+                        .body()
                         .foregroundColor(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Color(.lightGray) : Color(.label))
-                        .font(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Font.headline.weight(.black) : Font.headline.weight(.regular))
                         .multilineTextAlignment(.leading)
                         .lineLimit(1)
+                        .font(chat.seenBy[FirestoreConstants.currentUser?.uid ?? ""] == true ? Font.headline.weight(.black) : Font.headline.weight(.regular))
                 }
                 .padding(.leading)
                 
                 Spacer()
                 
                 Text(chat.lastMessageTimeAgo)
-                    .font(.system(size: 14, weight: .semibold))
+                    .customFont(name: FontConstants.semiBold, size: FontConstants.regularCaptionSize)
                     .foregroundColor(Color(.label))
             }
         }
@@ -237,7 +232,7 @@ struct ChatListView: View {
             HStack {
                 Spacer()
                 Text("+ New Chat")
-                    .font(.system(size: 16, weight: .bold))
+                    .boldTitle()
                 Spacer()
             }
             .foregroundColor(.white)

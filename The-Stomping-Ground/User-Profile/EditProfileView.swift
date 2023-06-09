@@ -26,9 +26,9 @@ struct EditProfileView: View {
                         HStack {
                             Spacer()
                             Text("Save Changes")
+                                .semiBoldTitle()
                                 .foregroundColor(.white)
                                 .padding(.vertical, 10)
-                                .font(.system(size: 14, weight: .semibold))
                             Spacer()
                         }
                         .background(Color.blue)

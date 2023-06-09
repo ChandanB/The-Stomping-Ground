@@ -92,7 +92,7 @@ struct RegisterAccountView: View {
         var body: some View {
             VStack(spacing: 7) {
                 Text(userType?.rawValue.capitalized ?? "Select User Type")
-                    .font(.system(size: 28, weight: .medium))
+                    .title1()
                     .foregroundColor(.black)
 
                 Picker("User Type", selection: $userType) {
@@ -119,7 +119,7 @@ struct RegisterAccountView: View {
                     Text(title)
                         .foregroundColor(.white)
                         .padding(.vertical, 10)
-                        .font(.system(size: 14, weight: .semibold))
+                        .customFont(name: FontConstants.semiBold, size: 14)
                     Spacer()
                 }
                 .disabled(isDisabled ? true : false)
@@ -194,7 +194,7 @@ struct RegisterAccountView: View {
             if let message = message {
                 Text(message)
                     .foregroundColor(.black)
-                    .font(.caption)
+                    .caption()
                     .padding(.top, 4)
             } else {
                 Spacer()
@@ -291,7 +291,6 @@ struct RegisterAccountView: View {
 
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
-        RegisterAccountView(didCompleteRegisterProcess: {})
-        //        LoginView(didCompleteLoginProcess: {})
+        LoginView(didCompleteLoginProcess: {})
     }
 }

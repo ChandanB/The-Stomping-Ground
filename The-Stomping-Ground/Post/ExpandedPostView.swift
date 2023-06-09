@@ -75,7 +75,7 @@ struct ExpandedPostView: View {
                     }
                     
                     Text(post.caption)
-                        .font(.subheadline)
+                        .subheadline()
                         .multilineTextAlignment(.leading)
                         .padding()
                     
@@ -122,7 +122,7 @@ struct ExpandedPostView: View {
                 HStack {
                     Spacer()
                     Text("Comments")
-                        .font(.headline)
+                        .boldHeadline()
                         .padding()
                     Spacer()
                 }
@@ -174,9 +174,9 @@ struct ExpandedPostView: View {
                     .frame(width: 56, height: 56)
                     .clipShape(Circle())
                 Text(post.user.username)
-                    .font(.subheadline).bold()
+                    .boldSubheadline()
                 Text(post.timeAgo)
-                    .font(.footnote, weight: .light)
+                    .lightFootnote()
             }
         }
     }
@@ -232,13 +232,13 @@ struct CommentView: View {
             VStack(alignment: .leading) {
                 HStack {
                     Text(comment.user.username)
-                        .font(.subheadline).bold()
+                        .boldSubheadline()
                     Text(comment.timeAgo)
-                        .font(.footnote, weight: .light)
+                        .lightFootnote()
                 }
                
                 Text(comment.text)
-                    .font(.subheadline)
+                    .subheadline()
             }
             
             Spacer()

@@ -35,7 +35,7 @@ struct PostView: View {
                 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(post.caption.count > 200 ? post.caption.prefix(200) + "..." : post.caption.prefix(200))
-                        .font(.subheadline)
+                        .subheadline()
                         .multilineTextAlignment(.leading)
                     if post.caption.count > 100 {
                         Button("Show More") {
@@ -93,7 +93,6 @@ struct PostView: View {
                 
             }
         }
-        .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
         .background(Color(.white))
         .frame(width: UIScreen.main.bounds.width)
         .sheet(isPresented: $showExpandedPostView) {
@@ -111,10 +110,10 @@ struct PostView: View {
                 
                 HStack(spacing: 7) {
                     Text(post.user.username)
-                        .font(.subheadline)
+                        .subheadline()
                         .fontWeight(.medium)
                     Text(post.timeAgo)
-                        .font(.footnote)
+                        .footnote()
                         .foregroundColor(.gray)
                 }
             }

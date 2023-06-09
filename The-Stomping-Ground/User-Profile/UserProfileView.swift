@@ -45,13 +45,13 @@ struct UserProfileView: View {
                         
                         VStack(alignment: .leading) {
                             Text(user.username)
-                                .font(.title)
+                                .title1()
                                 .foregroundColor(.black)
                             
                             Spacer()
                             
                             Text(user.bio ?? "")
-                                .font(.subheadline)
+                                .subheadline()
                                 .foregroundColor(.gray)
                                 .lineLimit(nil)
                             
@@ -71,44 +71,44 @@ struct UserProfileView: View {
                     
                     Spacer()
                     
-                    HStack {
-                        Spacer()
-                        // Display follow and unfollow buttons
-                        if isFollowing {
-                            Button(action: {
-                                // Call a function to unfollow the user
-                                unfollowUser()
-                            }) {
-                                Text("Unsubscribe")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(width: 300)
-                                    .background(Color.red)
-                                    .cornerRadius(10)
-                            }
-                        } else {
-                            Button(action: {
-                                // Call a function to follow the user
-                                followUser()
-                            }) {
-                                Text("Subcribe")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(width: 300)
-                                    .background(Color.blue)
-                                    .cornerRadius(10)
-                            }
-                        }
-                        Spacer()
-                    }
+//                    HStack {
+//                        Spacer()
+//                        // Display follow and unfollow buttons
+//                        if isFollowing {
+//                            Button(action: {
+//                                // Call a function to unfollow the user
+//                                unfollowUser()
+//                            }) {
+//                                Text("Unsubscribe")
+//                                    .font(.headline)
+//                                    .foregroundColor(.white)
+//                                    .padding()
+//                                    .frame(width: 300)
+//                                    .background(Color.red)
+//                                    .cornerRadius(10)
+//                            }
+//                        } else {
+//                            Button(action: {
+//                                // Call a function to follow the user
+//                                followUser()
+//                            }) {
+//                                Text("Subcribe")
+//                                    .font(.headline)
+//                                    .foregroundColor(.white)
+//                                    .padding()
+//                                    .frame(width: 300)
+//                                    .background(Color.blue)
+//                                    .cornerRadius(10)
+//                            }
+//                        }
+//                        Spacer()
+//                    }
                     
                     
                     Picker("", selection: $selectedTab) {
                         ForEach(Tab.allCases) { tab in
                             Text(tab.title)
-                                .font(.headline)
+                                .boldHeadline()
                                 .tag(tab)
                         }
                     }

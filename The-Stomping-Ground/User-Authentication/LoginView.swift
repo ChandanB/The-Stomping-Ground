@@ -90,7 +90,7 @@ struct LoginView: View {
         var body: some View {
             VStack(alignment: .leading) {
                 Text(label)
-                    .font(.subheadline)
+                    .subheadline()
                     .foregroundColor(.white)
                 
                 TextField(placeholder, text: text)
@@ -112,7 +112,7 @@ struct LoginView: View {
         var body: some View {
             VStack(alignment: .leading) {
                 Text(label)
-                    .font(.subheadline)
+                    .subheadline()
                     .foregroundColor(.white)
                 
                 HStack {
@@ -149,7 +149,7 @@ struct LoginView: View {
                 Text(title)
                     .foregroundColor(.white)
                     .padding(.vertical, 10)
-                    .font(.system(size: 14, weight: .semibold))
+                    .customFont(name: FontConstants.semiBold, size: 14)
                     .frame(maxWidth: .infinity)
                     .background(disabled ? Color.gray : backgroundColor)
                     .cornerRadius(8)

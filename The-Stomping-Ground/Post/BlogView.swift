@@ -50,8 +50,7 @@ struct BlogListView: View {
                 Spacer()
                 
                 Text("Blogs")
-                    .font(.system(size: 20))
-                    .fontWeight(.bold)
+                    .title2()
                 
                 Spacer()
                 
@@ -90,8 +89,7 @@ struct ReadingPlansSection: View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 Text("Blogs")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .title2()
                     .padding(.leading)
                 Spacer()
                 Button("See All") {
@@ -141,24 +139,23 @@ struct BlogCard: View {
                     
                     VStack(alignment: .leading, spacing: 5) {
                         Text(blog.author.displayName)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                            .subheadline()
                         Text(Date(timeIntervalSince1970: TimeInterval(blog.publishOn/1000)), style: .date)
-                            .font(.footnote)
+                            .footnote()
                             .foregroundColor(.gray)
                     }
                     Spacer()
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     Text(blog.title)
-                        .font(.headline)
+                        .boldHeadline()
                     if blog.excerpt.isEmpty {
                         Text(blog.body.shortPreview(maxLength: 200, afterTag: "<p>"))
-                            .font(.subheadline)
+                            .subheadline()
                             .foregroundColor(.gray)
                     } else {
                         Text(blog.excerpt.stripHTML())
-                            .font(.subheadline)
+                            .subheadline()
                             .foregroundColor(.gray)
                     }
                 }
@@ -174,7 +171,6 @@ struct BlogCard: View {
             .padding()
             .background(Color(.white))
         }
-        .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
         .background(Color(.white))
         .cornerRadius(24)
         .buttonStyle(PlainButtonStyle())
@@ -208,8 +204,7 @@ struct BlogView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     Text(blog.title)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
+                        .largeTitle()
                         .padding(.top)
                     HStack {
                         WebImage(url: URL(string: blog.author.avatarUrl ?? ""))
@@ -220,10 +215,10 @@ struct BlogView: View {
                         
                         VStack(alignment: .leading) {
                             Text(blog.author.displayName)
-                                .font(.headline)
+                                .boldHeadline()
                                 .foregroundColor(.secondary)
                             Text(Date(timeIntervalSince1970: TimeInterval(blog.publishOn/1000)), style: .date)
-                                .font(.subheadline)
+                                .subheadline()
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
@@ -250,7 +245,6 @@ struct BlogView: View {
                 .padding()
             }
         }
-        .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
     }
 }
 
@@ -296,7 +290,7 @@ class Coordinator: NSObject, WKNavigationDelegate {
     }
 }
 
-class WebViewModel: ObservableObject {
+class WebViewModel: NSObject, ObservableObject, WKNavigationDelegate  {
     @Published var isLoading: Bool = true
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {

@@ -80,8 +80,10 @@ struct HomeView: View {
                                 let currentHour = Calendar.current.component(.hour, from: Date())
                                    if currentHour >= 18 || currentHour < 6 {
                                        DailyEmbersCard()
+                                           .frame(width: .infinity)
                                    } else {
                                        DailyKindlingCard()
+                                           .frame(width: .infinity)
                                    }
 
                                 Spacer()
@@ -102,11 +104,9 @@ struct HomeView: View {
                     }
                     .background(Color(.systemGray6))
                 }
-                .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
                 .background(Color(.clear))
                 .navigationBarHidden(true)
             }
-            .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
             .background(Color(.clear))
         }
     
@@ -152,18 +152,17 @@ struct DailyKindlingCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Kindling")
-                .font(.title2)
-                .fontWeight(.bold)
+                .title2()
             Text("Morning Thoughts")
-                .font(.title)
-                .fontWeight(.semibold)
+                .title1()
             Text("Let's start the day with some positive thoughts and set our intentions.")
-                .font(.body)
+                .body()
                 .fixedSize(horizontal: false, vertical: true)
             Button(action: {
                 // Handle start action
             }, label: {
                 Text("Start")
+                    .body()
                     .padding(.horizontal, 30)
                     .padding(.vertical, 10)
                     .background(Color.blue)
@@ -171,7 +170,6 @@ struct DailyKindlingCard: View {
                     .cornerRadius(8)
             })
         }
-        .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
         .padding()
         .background(Color(.white))
         .cornerRadius(8)
@@ -182,18 +180,17 @@ struct DailyEmbersCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Embers")
-                .font(.title2)
-                .fontWeight(.bold)
+                .title2()
             Text("Rose, Bud, Thorn")
-                .font(.title)
-                .fontWeight(.semibold)
+                .title1()
             Text("Let's practice reflection and look back on some of our favorite and least favorite parts of the day.")
-                .font(.body)
+                .body()
                 .fixedSize(horizontal: false, vertical: true)
             Button(action: {
                 // Handle share action
             }, label: {
                 Text("Start")
+                    .body()
                     .padding(.horizontal, 30)
                     .padding(.vertical, 10)
                     .background(Color.blue)

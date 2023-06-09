@@ -59,7 +59,7 @@ struct AddPostView: View {
 //                    .sheet(isPresented: $showVideoPicker) {
 //                        // Implement video picker view
 //                    }
-//                    
+//
 //                    Button(action: {
 //                        showStoryCreator.toggle()
 //                    }) {
@@ -115,101 +115,103 @@ struct CreateAPostView: View {
     
     var body: some View {
         VStack {
-            VStack {
-                HStack {
-                    Button("Back") {
-                        presentationMode.dismiss()
-                    }
-                    Spacer()
-                    Text("Create Post")
-                        .font(.title)
-                    Spacer()
-                    Button("Post") {
-                        addPostViewModel.createPost(media: selectedImages, mediaType: selectedMediaType, caption: postText)
-                        presentationMode.dismiss()
-                    }
-                }
-                .padding()
-                
+            ScrollView {
                 VStack {
-                    TextField("What's on your mind", text: $postText, axis: .vertical)
-                        .padding()
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
-                        .padding(.horizontal)
-                    
-                    if !selectedImages.isEmpty {
-                        Picker("Media Layout", selection: $selectedMediaType.animation()) {
-                            Text("Grid").tag(MediaType.gridImages)
-                            Text("Carousel").tag(MediaType.carouselImages)
+                    HStack {
+                        Button("Back") {
+                            presentationMode.dismiss()
                         }
-                        .pickerStyle(SegmentedPickerStyle())
-                        .padding(.horizontal)
-                    }
-                    
-                    ImageSelectionView(mediaType: selectedMediaType, images: selectedImages)
-                }
-                
-                Spacer()
-                
-                VStack {
-                    Divider()
-                    PhotosPicker(selection: $addPostViewModel.imageSelection,
-                                 maxSelectionCount: 4,
-                                 matching: .images,
-                                 photoLibrary: .shared()) {
-                        HStack {
-                            Image(systemName: "photo.fill")
-                                .font(.system(size: 25))
-                            Text("Select Images")
+                        Spacer()
+                        Text("Create Post")
+                            .title1()
+                        Spacer()
+                        Button("Post") {
+                            addPostViewModel.createPost(media: selectedImages, mediaType: selectedMediaType, caption: postText)
+                            presentationMode.dismiss()
                         }
                     }
-                                 .buttonStyle(.borderless)
-                                 .padding(.top)
-                                 .onChange(of: addPostViewModel.imageSelection) { _ in
-                                     Task {
-                                         selectedImages.removeAll()
-                                         
-                                         for item in addPostViewModel.imageSelection {
-                                             if let data = try? await item.loadTransferable(type: Data.self) {
-                                                 if let image = UIImage(data: data) {
-                                                     selectedImages.append(image)
+                    .padding()
+                    
+                    VStack {
+                        TextField("What's on your mind", text: $postText, axis: .vertical)
+                            .padding()
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.gray, lineWidth: 1))
+                            .padding(.horizontal)
+                        
+                        if !selectedImages.isEmpty {
+                            Picker("Media Layout", selection: $selectedMediaType.animation()) {
+                                Text("Grid").tag(MediaType.gridImages)
+                                Text("Carousel").tag(MediaType.carouselImages)
+                            }
+                            .pickerStyle(SegmentedPickerStyle())
+                            .padding(.horizontal)
+                        }
+                        
+                        ImageSelectionView(mediaType: selectedMediaType, images: selectedImages)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack {
+                        Divider()
+                        PhotosPicker(selection: $addPostViewModel.imageSelection,
+                                     maxSelectionCount: 4,
+                                     matching: .images,
+                                     photoLibrary: .shared()) {
+                            HStack {
+                                Image(systemName: "photo.fill")
+                                    .font(.system(size: 25))
+                                Text("Select Images")
+                            }
+                        }
+                                     .buttonStyle(.borderless)
+                                     .padding(.top)
+                                     .onChange(of: addPostViewModel.imageSelection) { _ in
+                                         Task {
+                                             selectedImages.removeAll()
+                                             
+                                             for item in addPostViewModel.imageSelection {
+                                                 if let data = try? await item.loadTransferable(type: Data.self) {
+                                                     if let image = UIImage(data: data) {
+                                                         selectedImages.append(image)
+                                                     }
                                                  }
                                              }
                                          }
                                      }
-                                 }
-                    
-                    HStack {
-                        Button("Quiz") {
-                            // Implement Quiz creation
-                        }
-                        .frame(width: 90, height: 80)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
                         
-                        Button("Text Poll") {
-                            // Implement Text Poll creation
+                        HStack {
+                            Button("Quiz") {
+                                // Implement Quiz creation
+                            }
+                            .frame(width: 90, height: 80)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            
+                            Button("Text Poll") {
+                                // Implement Text Poll creation
+                            }
+                            .frame(width: 90, height: 80)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            
+                            Button("Image Poll") {
+                                // Implement Image Poll creation
+                            }
+                            .frame(width: 90, height: 80)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                            
                         }
-                        .frame(width: 90, height: 80)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        
-                        Button("Image Poll") {
-                            // Implement Image Poll creation
-                        }
-                        .frame(width: 90, height: 80)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .padding(.top)
                         
                     }
-                    .padding(.top)
-                    
                 }
+                Spacer()
             }
-            Spacer()
         }
     }
 }
@@ -303,3 +305,35 @@ struct ExpandedImageViewWithImage: View {
     }
 }
 
+struct KeyboardAvoiding: ViewModifier {
+    @State private var keyboardHeight: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.bottom, keyboardHeight)
+            .onAppear(perform: subscribeToKeyboardEvents)
+            .onDisappear(perform: unsubscribeFromKeyboardEvents)
+    }
+
+    private func subscribeToKeyboardEvents() {
+        NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { (notification) in
+            guard let userInfo = notification.userInfo else { return }
+            guard let keyboardEndFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            keyboardHeight = keyboardEndFrame.height
+        }
+        NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { (_) in
+            keyboardHeight = 0
+        }
+    }
+
+    private func unsubscribeFromKeyboardEvents() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+}
+
+extension View {
+    func keyboardAvoiding() -> some View {
+        ModifiedContent(content: self, modifier: KeyboardAvoiding())
+    }
+}

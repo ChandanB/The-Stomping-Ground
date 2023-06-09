@@ -70,11 +70,11 @@ struct MakerspaceVideoCard: View {
                 
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Video Title")
-                        .font(.headline)
+                        .boldHeadline()
                         .lineLimit(2)
                     
                     Text("Creator Name • 1M views • 3 weeks ago")
-                        .font(.subheadline)
+                        .subheadline()
                         .foregroundColor(.gray)
                 }
                 

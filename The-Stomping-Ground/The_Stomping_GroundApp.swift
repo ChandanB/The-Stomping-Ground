@@ -9,10 +9,13 @@ import SwiftUI
 
 @main
 struct The_Stomping_GroundApp: App {
+    init() {
+           AppTheme.applyFont()
+       }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .customFont(name: FontConstants.mainFont, size: 17)
         }
     }
 }

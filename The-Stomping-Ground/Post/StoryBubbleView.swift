@@ -24,7 +24,7 @@ struct StoryBubbleView: View {
                 
                 // Display the username of the user who shared the story
                 Text(story.user.username)
-                    .font(.caption)
+                    .caption()
                     .frame(width: 80)
             }
             .buttonStyle(PlainButtonStyle())

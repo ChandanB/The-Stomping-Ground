@@ -299,6 +299,7 @@ extension FirebaseManager {
         }
     }
     
+    
     func createPost(media: [UIImage], mediaType: MediaType, caption: String, completion: @escaping (Result<Post, Error>) -> Void) {
         fetchCurrentUser { user in
             if media.isEmpty {

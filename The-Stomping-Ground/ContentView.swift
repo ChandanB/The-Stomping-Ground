@@ -10,7 +10,7 @@ import Firebase
 import FirebaseFirestoreSwift
 
 enum Tab {
-    case home, search, post, notifications, messages
+    case home, search, post, notifications, messages, register
 }
 
 class ContentViewModel: ObservableObject {
@@ -28,6 +28,11 @@ class ContentViewModel: ObservableObject {
         FirebaseManager.shared.fetchCurrentUser { user in
             self.currentUser = user
         }
+    }
+    
+    func handleSuccessfulAuthentication() {
+        isUserCurrentlyLoggedOut = false
+        fetchCurrentUser()
     }
     
     func handleSignOut() {
@@ -60,7 +65,7 @@ struct ContentView: View {
                                 Spacer()
                                 
                                 Text("My Stomping Ground")
-                                    .font(.system(size: 20))
+                                    .navigationTitle()
                                 
                                 Spacer()
                                 
@@ -86,7 +91,6 @@ struct ContentView: View {
                                     Text("Home")
                                 }.tag(Tab.home)
                                 .background(.clear)
-                                .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
 
                             
                             MakerspaceView()
@@ -110,24 +114,26 @@ struct ContentView: View {
                                 }.tag(Tab.notifications)
                             
                             if let user = contentViewModel.currentUser {
-                                if user.userType == .counselor {
-                                    UserProfileView(user: user, viewModel: UserProfileViewModel(currentUserId: user.id ?? "", userId: user.id ?? ""))
-                                        .tabItem {
-                                            Image(systemName: "person")
-                                            Text("Profile")
-                                    }.tag(Tab.messages)
-                                }
-                            }
+                                   if user.userType == .counselor {
+                                       UserProfileView(user: user, viewModel: UserProfileViewModel(currentUserId: user.id ?? "", userId: user.id ?? ""))
+                                           .tabItem {
+                                               Image(systemName: "person")
+                                               Text("Profile")
+                                           }.tag(Tab.messages)
+                                   } else if user.userType == .donor || user.userType == .parent{
+                                       RegisterACamperView()
+                                           .tabItem {
+                                               Image(systemName: "person.3")
+                                               Text("Register")
+                                           }.tag(Tab.register)
+                                   }
+                               }
+                            
                         }
                         
                     }
-                } else {
-                    LoginView(didCompleteLoginProcess: {
-                        self.contentViewModel.isUserCurrentlyLoggedOut = false
-                    })
-                }
+                } 
             }
-            .customFont(name: FontConstants.mainFont, size: FontConstants.mainFontSize)
             .fullScreenCover(item: $selectedBlog) { blog in
                 BlogView(blog: blog)
             }
@@ -136,7 +142,7 @@ struct ContentView: View {
             }
             .fullScreenCover(isPresented: $contentViewModel.isUserCurrentlyLoggedOut, onDismiss: nil) {
                 LoginView(didCompleteLoginProcess: {
-                    self.contentViewModel.isUserCurrentlyLoggedOut = true
+                    contentViewModel.handleSuccessfulAuthentication()
                 })
             }
         }
@@ -151,7 +157,7 @@ struct ContentView: View {
                 shouldShowLogOutOptions.toggle()
             } label: {
                 Image(systemName: "gear")
-                    .font(.system(size: 24, weight: .bold))
+                    .customFont(name: FontConstants.bold, size: FontConstants.boldIconSize)
                     .foregroundColor(Color(.label))
             }
             .padding()

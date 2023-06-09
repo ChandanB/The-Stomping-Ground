@@ -181,14 +181,13 @@ extension Array where Element: Equatable {
 
 struct CustomFontText: View {
     var text: String
-    var size: CGFloat = 18
+    var size: CGFloat = FontConstants.regularBodySize
 
     var body: some View {
         Text(text)
-            .customFont(name: FontConstants.mainFont, size: size)
+            .customFont(name: FontConstants.regular, size: size)
     }
 }
-
 
 struct CustomFontModifier: ViewModifier {
     let fontName: String
@@ -203,5 +202,46 @@ struct CustomFontModifier: ViewModifier {
 extension View {
     func customFont(name: String, size: CGFloat) -> some View {
         self.modifier(CustomFontModifier(fontName: name, size: size))
+    }
+}
+
+struct AppTheme {
+    static func applyFont() {
+        let fontDescriptor = UIFontDescriptor(name: FontConstants.regular, size: FontConstants.regularBodySize)
+        let font = UIFont(descriptor: fontDescriptor, size: 17)
+
+        UIBarButtonItem.appearance().setTitleTextAttributes([.font: font], for: .normal)
+        UINavigationBar.appearance().titleTextAttributes = [.font: font]
+        UINavigationBar.appearance().largeTitleTextAttributes = [.font: font]
+
+        UISegmentedControl.appearance().setTitleTextAttributes([.font: font], for: .normal)
+        UITextView.appearance().font = font
+        UITextField.appearance().defaultTextAttributes = [.font: font]
+
+        UIButton.appearance().titleLabel?.font = font
+        UILabel.appearance().font = font
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, apply: (Self) -> Content, `else`: (Self) -> Content) -> some View {
+        if condition {
+            apply(self)
+        } else {
+            `else`(self)
+        }
+    }
+}
+
+extension View {
+    func conditionalHeadline(_ text: Text, isBold: Bool) -> some View {
+        Group {
+            if isBold {
+                text.blackHeadline()
+            } else {
+                text.regularHeadline()
+            }
+        }
     }
 }

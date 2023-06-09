@@ -59,15 +59,15 @@ struct PostCell: View {
                         
                         // User name and username
                         Text(post.user.name)
-                            .font(.headline)
+                            .boldHeadline()
                         
                         Text("@" + post.user.username)
-                            .font(.subheadline)
+                            .subheadline()
                             .foregroundColor(.gray)
                         
                         // Post time
                         Text(post.timeAgo)
-                            .font(.subheadline)
+                            .subheadline()
                             .foregroundColor(.gray)
                     }
                     
@@ -121,7 +121,7 @@ struct PostCell: View {
                             }
                             // Number of likes
                             Text("\(post.numLikes) likes")
-                                .font(.subheadline)
+                                .subheadline()
                                 .foregroundColor(.gray)
                         }
                         
@@ -149,7 +149,7 @@ struct PostCell: View {
                     
                     // Post caption
                     Text(post.caption)
-                        .font(.body)
+                        .body()
                         .padding(.top)
                 }
                 .padding(.leading, 4)
@@ -234,8 +234,8 @@ class SearchViewModel: ObservableObject {
                     }
 
                     do {
-                        let post = try change.document.data(as: Post.self)
-                        self.posts.insert(post, at: 0)
+//                        let post = try change.document.data(as: Post.self)
+//                        self.posts.insert(post, at: 0)
                     } catch {
                         print(error)
                     }

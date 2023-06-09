@@ -31,16 +31,13 @@ class ChatViewModel: ObservableObject {
     
     var firestoreListener: ListenerRegistration?
     
-    init(chat: Chat?, currentUser: User?) {
-        guard let chat = chat else { return }
+    init(chat: Chat?) {
         self.chat = chat
-        self.currentUser = currentUser
-        fetchChatMessages()
     }
-    
+ 
     func fetchChatMessages() {
         guard let chat = self.chat else { return }
-        guard let chatId = self.chat?.id else { return }
+        guard let chatId = chat.id else { return }
         
         firestoreListener?.remove()
         chatMessages.removeAll()
@@ -53,25 +50,12 @@ class ChatViewModel: ObservableObject {
             }
             
             if let messages = messages {
-                let dispatchGroup = DispatchGroup()
                 self.chatMessages = messages
                 
-                dispatchGroup.notify(queue: .main) {
-                    // Fetch chat participants
-                    FirebaseManager.shared.fetchChatParticipants(chat: chat, excludedUID: self.currentUser?.uid) { result in
-                        switch result {
-                        case .success(let users):
-                            self.participants = users
-                        case .failure(let error):
-                            print("Error loading participants: \(error)")
-                        }
-                    }
-                    
-                    // Mark chat as seen by current user
-                    if let currentUserID = self.currentUser?.uid {
-                        if !(chat.seenBy[currentUserID] ?? true) {
-                            FirebaseManager.shared.markChat(chat: chat, userId: currentUserID, seen: true)
-                        }
+                // Mark chat as seen by current user
+                if let currentUserID = self.currentUser?.uid {
+                    if !chat.seenBy[currentUserID, default: false] {
+                        FirebaseManager.shared.markChat(chat: chat, userId: currentUserID, seen: true)
                     }
                 }
             }
@@ -107,16 +91,12 @@ struct ChatView: View {
     
     @Environment(\.dismiss) private var dismiss
     
-    let chat: Chat?
-    let currentUser: User?
     static let emptyScrollToString = "Empty"
     @ObservedObject var chatViewModel: ChatViewModel
     @State private var isPresentingEditChatView = false
     
-    init(chat: Chat?, currentUser: User?) {
-        self.chat = chat
-        self.currentUser = currentUser
-        self.chatViewModel = ChatViewModel(chat: chat, currentUser: currentUser)
+    init(viewModel: ChatViewModel) {
+        self.chatViewModel = viewModel
     }
     
     var body: some View {
@@ -124,10 +104,10 @@ struct ChatView: View {
             messagesView
             Text(chatViewModel.errorMessage)
         }
-        .navigationTitle(chat?.name ?? "")
+        .navigationTitle(chatViewModel.chat?.name ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            if currentUser?.userType == .counselor {
+            if chatViewModel.currentUser?.userType == .counselor {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         isPresentingEditChatView.toggle()
@@ -138,7 +118,7 @@ struct ChatView: View {
             }
         }
         .sheet(isPresented: $isPresentingEditChatView) {
-            if let chat = chat, let currentUser = currentUser {
+            if let chat = chatViewModel.chat, let currentUser = chatViewModel.currentUser {
                 EditChatView(chat: chat, currentUser: currentUser)
             } else {
                 Text("Error: Chat or current user is missing.")
@@ -159,7 +139,7 @@ struct ChatView: View {
             }
             
             HStack {
-                WebImage(url: URL(string: chat?.chatImageUrl ?? ""))
+                WebImage(url: URL(string: chatViewModel.chat?.chatImageUrl ?? ""))
                     .resizable()
                     .scaledToFill()
                     .frame(width: 40, height: 40)
@@ -172,9 +152,9 @@ struct ChatView: View {
                     .padding(.leading, 16)
                 
                 
-                let name = chat?.name ?? ""
+                let name = chatViewModel.chat?.name ?? ""
                 Text(name)
-                    .font(.system(size: 15, weight: .bold))
+                    .navigationTitle()
                 
                 
                 Spacer()
